@@ -1,0 +1,14 @@
+{
+  "name": "at-shift/agentic-web-governance-conformance",
+  "description": "PHP conformance runner for the Agentic Web Governance specification",
+  "type": "project",
+  "license": "GPL-2.0-or-later",
+  "require-dev": {
+    "opis/json-schema": "^2.6",
+    "seld/jsonlint": "^1.11",
+    "truschery/kanon": "^1.0"
+  },
+  "scripts": {
+    "test": "php tools/conformance/php.php"
+  }
+}

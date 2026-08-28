@@ -1,0 +1,32 @@
+{
+  "preconditions" : { "resource_version" : "8" },
+  "policy" : {
+    "profiles" : [
+      { "version" : "draft-0.1", "id" : "japan" },
+      { "version" : "draft-0.1", "id" : "wordpress" }
+    ],
+    "version" : "17",
+    "id" : "site-default"
+  },
+  "transmission" : {
+    "data_classes" : [ "INTERNAL", "PERSONAL" ],
+    "purpose" : "content-review",
+    "recipient" : "provider-3"
+  },
+  "impact" : { "data_classes" : [ "INTERNAL", "PERSONAL" ], "reversibility" : "reversible", "risk_class" : "write" },
+  "resource" : { "attributes" : { "site_id" : "site-42" }, "id" : "42", "type" : "post" },
+  "arguments" : {
+    "blocks" : [ "intro", "body" ],
+    "status" : "publish",
+    "post_id" : "42"
+  },
+  "delegation" : { "version" : "4", "id" : "delegation-11" },
+  "actors" : {
+    "agent" : { "subject" : "agent-9", "issuer" : "https://issuer.example" },
+    "client" : { "subject" : "client-7", "issuer" : "https://issuer.example" }
+  },
+  "capability" : "example/publish-post",
+  "application_principal" : { "id" : "123", "type" : "wordpress-user" },
+  "application" : { "tenant_id" : "site-42", "instance_id" : "site-42", "type" : "wordpress" },
+  "version" : 1
+}

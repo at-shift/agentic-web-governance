@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/at-shift/agentic-web-governance/schemas/action-v1.schema.json",
+  "title": "Agentic Web Governance canonical action version 1",
+  "description": "The approval-relevant action projection defined by RFC 0001.",
+  "type": "object",
+  "required": [
+    "version",
+    "application",
+    "application_principal",
+    "capability",
+    "arguments",
+    "impact",
+    "policy"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "application": {
+      "$ref": "#/$defs/application"
+    },
+    "application_principal": {
+      "$ref": "#/$defs/principal"
+    },
+    "capability": {
+      "$ref": "#/$defs/stableIdentifier"
+    },
+    "actors": {
+      "$ref": "#/$defs/actors"
+    },
+    "delegation": {
+      "$ref": "#/$defs/delegation"
+    },
+    "arguments": {
+      "$ref": "#/$defs/jsonObject"
+    },
+    "resource": {
+      "$ref": "#/$defs/resource"
+    },
+    "impact": {
+      "$ref": "#/$defs/impact"
+    },
+    "transmission": {
+      "$ref": "#/$defs/transmission"
+    },
+    "policy": {
+      "$ref": "#/$defs/policy"
+    },
+    "preconditions": {
+      "$ref": "#/$defs/jsonObject"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "stableIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]*$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "application": {
+      "type": "object",
+      "required": ["type", "instance_id"],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "instance_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "tenant_id": {
+          "$ref": "#/$defs/stableIdentifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "principal": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "id": {
+          "$ref": "#/$defs/stableIdentifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "actor": {
+      "type": "object",
+      "required": ["issuer", "subject"],
+      "properties": {
+        "issuer": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "subject": {
+          "$ref": "#/$defs/stableIdentifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "actors": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "client": {
+          "$ref": "#/$defs/actor"
+        },
+        "agent": {
+          "$ref": "#/$defs/actor"
+        }
+      },
+      "additionalProperties": false
+    },
+    "delegation": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "version": {
+          "$ref": "#/$defs/stableIdentifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "resource": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "attributes": {
+          "$ref": "#/$defs/jsonObject"
+        }
+      },
+      "additionalProperties": false
+    },
+    "impact": {
+      "type": "object",
+      "required": ["risk_class", "reversibility", "data_classes"],
+      "properties": {
+        "risk_class": {
+          "enum": [
+            "read",
+            "low",
+            "write",
+            "sensitive",
+            "destructive",
+            "financial"
+          ]
+        },
+        "reversibility": {
+          "enum": [
+            "reversible",
+            "partially_reversible",
+            "irreversible",
+            "unknown"
+          ]
+        },
+        "data_classes": {
+          "$ref": "#/$defs/dataClasses"
+        }
+      },
+      "additionalProperties": false
+    },
+    "transmission": {
+      "type": "object",
+      "required": ["recipient", "purpose", "data_classes"],
+      "properties": {
+        "recipient": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "purpose": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "data_classes": {
+          "$ref": "#/$defs/dataClasses"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dataClasses": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "PUBLIC",
+          "INTERNAL",
+          "PERSONAL",
+          "SENSITIVE",
+          "CONFIDENTIAL"
+        ]
+      },
+      "uniqueItems": true,
+      "maxItems": 5
+    },
+    "policy": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "version": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/profile"
+          },
+          "maxItems": 32
+        }
+      },
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/stableIdentifier"
+        },
+        "version": {
+          "$ref": "#/$defs/stableIdentifier"
+        }
+      },
+      "additionalProperties": false
+    },
+    "jsonObject": {
+      "type": "object",
+      "propertyNames": {
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/jsonValue"
+      },
+      "maxProperties": 256
+    },
+    "jsonArray": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/jsonValue"
+      },
+      "maxItems": 1024
+    },
+    "interoperableNumber": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "number",
+          "not": {
+            "type": "integer"
+          }
+        }
+      ]
+    },
+    "jsonValue": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "string", "maxLength": 65536},
+        {"$ref": "#/$defs/interoperableNumber"},
+        {"$ref": "#/$defs/jsonObject"},
+        {"$ref": "#/$defs/jsonArray"}
+      ]
+    }
+  }
+}

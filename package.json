@@ -1,0 +1,31 @@
+{
+  "name": "agentic-web-governance-conformance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "example:reference": "node examples/reference-flow.mjs",
+    "test": "npm run test:action && npm run test:lifecycle && npm run test:reference && npm run test:wordpress",
+    "test:action": "npm run test:js && npm run test:php && npm run test:cross-runtime",
+    "test:cross-runtime": "node tools/conformance/cross-runtime.mjs",
+    "test:js": "node tools/conformance/javascript.mjs",
+    "test:php": "php tools/conformance/php.php",
+    "test:lifecycle": "npm run test:lifecycle:js && npm run test:lifecycle:php && npm run test:lifecycle:cross-runtime",
+    "test:lifecycle:cross-runtime": "node tools/conformance/approval-lifecycle-cross-runtime.mjs",
+    "test:lifecycle:js": "node tools/conformance/approval-lifecycle-javascript.mjs",
+    "test:lifecycle:php": "php tools/conformance/approval-lifecycle-php.php",
+    "test:reference": "node tests/reference-kernel-javascript.mjs",
+    "test:wordpress": "php tests/wordpress-ability-governance-php.php",
+    "test:wordpress:live": "php tools/acceptance/wordpress-live.php",
+    "e2e:wordpress:setup": "examples/wordpress/e2e/setup.sh",
+    "e2e:wordpress:start": "examples/wordpress/e2e/start.sh",
+    "e2e:wordpress:verify": "examples/wordpress/e2e/verify.sh",
+    "e2e:wordpress:stop": "examples/wordpress/e2e/stop.sh"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "canonicalize": "4.0.0",
+    "jsonc-parser": "3.3.1"
+  }
+}

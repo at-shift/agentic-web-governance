@@ -1,0 +1,269 @@
+{
+  "fixture_format": 1,
+  "action_fixture": "../action-v1/manifest.json",
+  "base_context": {
+    "proposal": {
+      "id": "proposal-17",
+      "action_case": "baseline",
+      "request_hash": "sha256:94f23652f06d23061cd43ebb105c65604a40fe92f2f55f7434e94d56dc447f24"
+    },
+    "approval": {
+      "id": "approval-23",
+      "proposal_id": "proposal-17",
+      "request_hash": "sha256:94f23652f06d23061cd43ebb105c65604a40fe92f2f55f7434e94d56dc447f24",
+      "approver": {
+        "type": "wordpress-user",
+        "id": "501"
+      },
+      "decision": "approved",
+      "decided_at": 2000000010,
+      "expires_at": 2000000300,
+      "single_use": true,
+      "replay_state": "unused"
+    },
+    "execution": {
+      "now": 2000000100,
+      "reconstruction": {
+        "status": "available",
+        "action_case": "baseline"
+      },
+      "checks": {
+        "application_permission": true,
+        "delegation": true,
+        "policy": true,
+        "budget": true,
+        "preconditions": true
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "approved-single-use-execution",
+      "description": "An exact, current, unused approval permits one side effect",
+      "changes": [],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "executed",
+          "reason_code": "EXECUTE_ALLOWED",
+          "reconstruction": "matched",
+          "replay_state": "used",
+          "side_effect_count": 1
+        }
+      ]
+    },
+    {
+      "id": "reconstruction-failed",
+      "description": "Missing authoritative reconstruction fails closed",
+      "changes": [
+        {"op": "replace", "path": "/execution/reconstruction/status", "value": "unavailable"}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "RECONSTRUCTION_FAILED",
+          "reconstruction": "failed",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "argument-hash-mismatch",
+      "description": "Modified arguments invalidate the approval",
+      "changes": [
+        {"op": "replace", "path": "/execution/reconstruction/action_case", "value": "argument-change"}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "ACTION_HASH_MISMATCH",
+          "reconstruction": "mismatched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "policy-version-hash-mismatch",
+      "description": "A policy version change invalidates the approval",
+      "changes": [
+        {"op": "replace", "path": "/execution/reconstruction/action_case", "value": "policy-change"}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "ACTION_HASH_MISMATCH",
+          "reconstruction": "mismatched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "expiry-boundary",
+      "description": "An approval is expired when now equals expires_at",
+      "changes": [
+        {"op": "replace", "path": "/execution/now", "value": 2000000300}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "APPROVAL_EXPIRED",
+          "reconstruction": "not_attempted",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "replay-blocked",
+      "description": "A single-use approval cannot cause a second side effect",
+      "changes": [],
+      "attempts": [{"changes": []}, {"changes": []}],
+      "expected": [
+        {
+          "status": "executed",
+          "reason_code": "EXECUTE_ALLOWED",
+          "reconstruction": "matched",
+          "replay_state": "used",
+          "side_effect_count": 1
+        },
+        {
+          "status": "denied",
+          "reason_code": "APPROVAL_REPLAYED",
+          "reconstruction": "not_attempted",
+          "replay_state": "used",
+          "side_effect_count": 1
+        }
+      ]
+    },
+    {
+      "id": "application-permission-revoked",
+      "description": "Current application permission remains authoritative",
+      "changes": [
+        {"op": "replace", "path": "/execution/checks/application_permission", "value": false}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "APPLICATION_PERMISSION_DENIED",
+          "reconstruction": "matched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "delegation-invalid",
+      "description": "Revoked or expired delegation fails closed",
+      "changes": [
+        {"op": "replace", "path": "/execution/checks/delegation", "value": false}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "DELEGATION_INVALID",
+          "reconstruction": "matched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "policy-invalid",
+      "description": "A current policy failure remains authoritative even with an equal hash",
+      "changes": [
+        {"op": "replace", "path": "/execution/checks/policy", "value": false}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "POLICY_INVALID",
+          "reconstruction": "matched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "budget-exhausted",
+      "description": "An exhausted execution budget fails closed",
+      "changes": [
+        {"op": "replace", "path": "/execution/checks/budget", "value": false}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "BUDGET_EXHAUSTED",
+          "reconstruction": "matched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "precondition-failed",
+      "description": "Changed target state fails the execution precondition",
+      "changes": [
+        {"op": "replace", "path": "/execution/checks/preconditions", "value": false}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "PRECONDITION_FAILED",
+          "reconstruction": "matched",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "approval-not-approved",
+      "description": "A denied decision cannot reach reconstruction or execution",
+      "changes": [
+        {"op": "replace", "path": "/approval/decision", "value": "denied"}
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "APPROVAL_NOT_APPROVED",
+          "reconstruction": "not_attempted",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    },
+    {
+      "id": "approval-binding-mismatch",
+      "description": "An approval for a different request hash is invalid",
+      "changes": [
+        {
+          "op": "replace",
+          "path": "/approval/request_hash",
+          "value": "sha256:93c5e575c95f1d9ab504ce3f0f0475b5d6587c1725afc1ead907fe10ff89e14b"
+        }
+      ],
+      "attempts": [{"changes": []}],
+      "expected": [
+        {
+          "status": "denied",
+          "reason_code": "APPROVAL_BINDING_INVALID",
+          "reconstruction": "not_attempted",
+          "replay_state": "unused",
+          "side_effect_count": 0
+        }
+      ]
+    }
+  ]
+}

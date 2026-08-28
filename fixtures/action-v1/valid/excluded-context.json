@@ -1,0 +1,71 @@
+{
+  "description": "Only the action member is projected into canonical bytes.",
+  "excluded_context": {
+    "protocol": "mcp",
+    "protocol_version": "2026-06-18",
+    "request_id": "request-999",
+    "trace_id": "trace-999",
+    "received_at": "2026-08-25T09:00:00Z",
+    "retry_count": 3
+  },
+  "action": {
+    "version": 1,
+    "application": {
+      "type": "wordpress",
+      "instance_id": "site-42",
+      "tenant_id": "site-42"
+    },
+    "application_principal": {
+      "type": "wordpress-user",
+      "id": "123"
+    },
+    "capability": "example/publish-post",
+    "actors": {
+      "client": {
+        "issuer": "https://issuer.example",
+        "subject": "client-7"
+      },
+      "agent": {
+        "issuer": "https://issuer.example",
+        "subject": "agent-9"
+      }
+    },
+    "delegation": {
+      "id": "delegation-11",
+      "version": "4"
+    },
+    "arguments": {
+      "post_id": "42",
+      "status": "publish",
+      "blocks": ["intro", "body"]
+    },
+    "resource": {
+      "type": "post",
+      "id": "42",
+      "attributes": {
+        "site_id": "site-42"
+      }
+    },
+    "impact": {
+      "risk_class": "write",
+      "reversibility": "reversible",
+      "data_classes": ["INTERNAL", "PERSONAL"]
+    },
+    "transmission": {
+      "recipient": "provider-3",
+      "purpose": "content-review",
+      "data_classes": ["INTERNAL", "PERSONAL"]
+    },
+    "policy": {
+      "id": "site-default",
+      "version": "17",
+      "profiles": [
+        {"id": "japan", "version": "draft-0.1"},
+        {"id": "wordpress", "version": "draft-0.1"}
+      ]
+    },
+    "preconditions": {
+      "resource_version": "8"
+    }
+  }
+}

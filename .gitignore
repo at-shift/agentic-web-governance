@@ -1,0 +1,4 @@
+.DS_Store
+/node_modules/
+/vendor/
+/examples/wordpress/e2e/runtime/

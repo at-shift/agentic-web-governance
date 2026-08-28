@@ -1,0 +1,407 @@
+{
+  "fixture_format": 1,
+  "schema": "../../schemas/action-v1.schema.json",
+  "domain_prefix": "AWG-ACTION-V1\n",
+  "base_action": {
+    "version": 1,
+    "application": {
+      "type": "wordpress",
+      "instance_id": "site-42",
+      "tenant_id": "site-42"
+    },
+    "application_principal": {
+      "type": "wordpress-user",
+      "id": "123"
+    },
+    "capability": "example/publish-post",
+    "actors": {
+      "client": {
+        "issuer": "https://issuer.example",
+        "subject": "client-7"
+      },
+      "agent": {
+        "issuer": "https://issuer.example",
+        "subject": "agent-9"
+      }
+    },
+    "delegation": {
+      "id": "delegation-11",
+      "version": "4"
+    },
+    "arguments": {
+      "post_id": "42",
+      "status": "publish",
+      "blocks": ["intro", "body"]
+    },
+    "resource": {
+      "type": "post",
+      "id": "42",
+      "attributes": {
+        "site_id": "site-42"
+      }
+    },
+    "impact": {
+      "risk_class": "write",
+      "reversibility": "reversible",
+      "data_classes": ["INTERNAL", "PERSONAL"]
+    },
+    "transmission": {
+      "recipient": "provider-3",
+      "purpose": "content-review",
+      "data_classes": ["INTERNAL", "PERSONAL"]
+    },
+    "policy": {
+      "id": "site-default",
+      "version": "17",
+      "profiles": [
+        {"id": "japan", "version": "draft-0.1"},
+        {"id": "wordpress", "version": "draft-0.1"}
+      ]
+    },
+    "preconditions": {
+      "resource_version": "8"
+    }
+  },
+  "cases": [
+    {
+      "id": "baseline",
+      "description": "Complete canonical action",
+      "changes": [],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:94f23652f06d23061cd43ebb105c65604a40fe92f2f55f7434e94d56dc447f24"
+    },
+    {
+      "id": "formatting-and-key-order",
+      "description": "Whitespace and source object order are immaterial",
+      "file": "valid/formatting-and-key-order.json",
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:94f23652f06d23061cd43ebb105c65604a40fe92f2f55f7434e94d56dc447f24"
+    },
+    {
+      "id": "excluded-context",
+      "description": "Transport and trace context stay outside the action projection",
+      "file": "valid/excluded-context.json",
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:94f23652f06d23061cd43ebb105c65604a40fe92f2f55f7434e94d56dc447f24"
+    },
+    {
+      "id": "set-order-and-duplicates",
+      "description": "Declared string sets are deduplicated and sorted",
+      "changes": [
+        {
+          "op": "replace",
+          "path": "/impact/data_classes",
+          "value": ["PERSONAL", "INTERNAL", "PERSONAL"]
+        },
+        {
+          "op": "replace",
+          "path": "/transmission/data_classes",
+          "value": ["PERSONAL", "INTERNAL", "INTERNAL"]
+        },
+        {
+          "op": "replace",
+          "path": "/policy/profiles",
+          "value": [
+            {"id": "wordpress", "version": "draft-0.1"},
+            {"id": "japan", "version": "draft-0.1"}
+          ]
+        }
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:94f23652f06d23061cd43ebb105c65604a40fe92f2f55f7434e94d56dc447f24"
+    },
+    {
+      "id": "ordered-array-change",
+      "description": "Application-defined array order is material",
+      "changes": [
+        {
+          "op": "replace",
+          "path": "/arguments/blocks",
+          "value": ["body", "intro"]
+        }
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:bebb6a0717d2e8cf7153e89e4c5648fabd06c1e5a138507c4252f02322a9f3a2"
+    },
+    {
+      "id": "explicit-null",
+      "description": "An explicit null argument is material",
+      "changes": [
+        {"op": "add", "path": "/arguments/optional_note", "value": null}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:9b655d342042891dd8ff5788c359f9b529eff4db062822ad5eb3edc509f1dda3"
+    },
+    {
+      "id": "unicode-nfc",
+      "description": "Composed Unicode is preserved",
+      "changes": [
+        {"op": "add", "path": "/arguments/title", "value": "é"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:fd504346323f3a038743362d7d6e58e984e3e677c1a16749df0169bfbb5ba859"
+    },
+    {
+      "id": "unicode-nfd",
+      "description": "Decomposed Unicode is preserved without normalization",
+      "changes": [
+        {"op": "add", "path": "/arguments/title", "value": "é"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:da2b5456d680a53e824a77d2ae8a83378ffaecd368c2f470be5f6a9246a0f95e"
+    },
+    {
+      "id": "numeric-identifier-string",
+      "description": "Large numeric identifiers remain exact strings",
+      "changes": [
+        {
+          "op": "add",
+          "path": "/arguments/external_id",
+          "value": "9007199254740993"
+        }
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:9eda3befaeaedce528b3e1fe2beffe5fa5a8a42c60c79af6f1378b34bc450921"
+    },
+    {
+      "id": "number-format",
+      "description": "Interoperable fractional numbers use ECMAScript serialization",
+      "changes": [
+        {
+          "op": "add",
+          "path": "/arguments/measurements",
+          "value": [333333333.33333329, 4.50, 2e-3, 1e-27]
+        }
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:f825be4e986bef008552ba574202e86b714f76fc831f6584a4bd4d60d1b915a5"
+    },
+    {
+      "id": "unicode-property-order",
+      "description": "Object properties use RFC 8785 UTF-16 ordering",
+      "changes": [
+        {
+          "op": "add",
+          "path": "/arguments/unicode_keys",
+          "value": {
+            "€": "euro",
+            "😀": "emoji",
+            "דּ": "hebrew-ligature",
+            "𝄞": "music",
+            "\r": "carriage-return"
+          }
+        }
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:7df986045cf69f374685f78d1bfcffcca53ab69f659bf39fcab7b2262773af08"
+    },
+    {
+      "id": "application-change",
+      "description": "Application identity is material",
+      "changes": [
+        {"op": "replace", "path": "/application/instance_id", "value": "site-43"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:049d9b46353d653defe5110822d816f322e7ffcd7ee833f68477a25fa82432f3"
+    },
+    {
+      "id": "principal-change",
+      "description": "Application principal is material",
+      "changes": [
+        {"op": "replace", "path": "/application_principal/id", "value": "124"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:983a0579e04ff934922c93098271eaaa981d79ad6c2e1ed3819c05c48eb75df1"
+    },
+    {
+      "id": "actor-change",
+      "description": "Validated actor identity is material",
+      "changes": [
+        {"op": "replace", "path": "/actors/agent/subject", "value": "agent-10"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:f1e687366fda38817b6806bf9a461517c2b2b33dc81ab02b9d91aaf4fdcecacb"
+    },
+    {
+      "id": "capability-change",
+      "description": "Capability is material",
+      "changes": [
+        {"op": "replace", "path": "/capability", "value": "example/update-post"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:e064ec8ae721f79bfc0235baf5ab889bfcce2d94de0f91198e4632846b60bed3"
+    },
+    {
+      "id": "argument-change",
+      "description": "Arguments are material",
+      "changes": [
+        {"op": "replace", "path": "/arguments/post_id", "value": "43"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:93c5e575c95f1d9ab504ce3f0f0475b5d6587c1725afc1ead907fe10ff89e14b"
+    },
+    {
+      "id": "resource-change",
+      "description": "Resource identity is material",
+      "changes": [
+        {"op": "replace", "path": "/resource/id", "value": "43"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:263b872fe71c28cb30de09296c44bb8bf2b483a8331a0daefc33c1c12ae0aceb"
+    },
+    {
+      "id": "transmission-change",
+      "description": "Transmission recipient is material",
+      "changes": [
+        {"op": "replace", "path": "/transmission/recipient", "value": "provider-4"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:0a977674f80b1a91ece8b1433d95d12202b0aa41620163372acd42c3b1f771b0"
+    },
+    {
+      "id": "impact-change",
+      "description": "Impact classification is material",
+      "changes": [
+        {"op": "replace", "path": "/impact/risk_class", "value": "sensitive"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:98294b79fb39993a408d60481c5d2e4d30f212269036848dfc81623b81f292bd"
+    },
+    {
+      "id": "delegation-change",
+      "description": "Delegation version is material",
+      "changes": [
+        {"op": "replace", "path": "/delegation/version", "value": "5"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:30d0e8ee172f6884ca5791f96cc6c4e4e90028085ca2646254f51bfd186d98e6"
+    },
+    {
+      "id": "precondition-change",
+      "description": "Execution preconditions are material",
+      "changes": [
+        {"op": "replace", "path": "/preconditions/resource_version", "value": "9"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:5cffdadc10fabba151162b50f8f483adb3ea7c06f1d2ff6955405bb4d4045ec7"
+    },
+    {
+      "id": "policy-change",
+      "description": "Policy version is material",
+      "changes": [
+        {"op": "replace", "path": "/policy/version", "value": "18"}
+      ],
+      "expected_canonical_hex": "",
+      "expected_hash": "sha256:ee7f88a2be93e3dc76e090813848bc68fb0acf53ca7ed1f89198799cf0e612b4"
+    }
+  ],
+  "relations": [
+    {"kind": "equal", "left": "baseline", "right": "formatting-and-key-order"},
+    {"kind": "equal", "left": "baseline", "right": "excluded-context"},
+    {"kind": "equal", "left": "baseline", "right": "set-order-and-duplicates"},
+    {"kind": "different", "left": "baseline", "right": "ordered-array-change"},
+    {"kind": "different", "left": "baseline", "right": "explicit-null"},
+    {"kind": "different", "left": "baseline", "right": "number-format"},
+    {"kind": "different", "left": "unicode-nfc", "right": "unicode-nfd"},
+    {"kind": "different", "left": "baseline", "right": "application-change"},
+    {"kind": "different", "left": "baseline", "right": "principal-change"},
+    {"kind": "different", "left": "baseline", "right": "actor-change"},
+    {"kind": "different", "left": "baseline", "right": "capability-change"},
+    {"kind": "different", "left": "baseline", "right": "argument-change"},
+    {"kind": "different", "left": "baseline", "right": "resource-change"},
+    {"kind": "different", "left": "baseline", "right": "transmission-change"},
+    {"kind": "different", "left": "baseline", "right": "impact-change"},
+    {"kind": "different", "left": "baseline", "right": "delegation-change"},
+    {"kind": "different", "left": "baseline", "right": "precondition-change"},
+    {"kind": "different", "left": "baseline", "right": "policy-change"}
+  ],
+  "rejected": [
+    {
+      "id": "duplicate-object-member",
+      "description": "Duplicate object names fail before object-model parsing",
+      "raw": "{\"arguments\":{\"post_id\":\"42\",\"post_id\":\"43\"}}",
+      "stage": "parse"
+    },
+    {
+      "id": "duplicate-object-member-after-null",
+      "description": "A null first value cannot hide a duplicate object name",
+      "raw": "{\"arguments\":{\"post_id\":null,\"post_id\":\"43\"}}",
+      "stage": "parse"
+    },
+    {
+      "id": "non-finite-number",
+      "description": "Non-finite numbers are not JSON",
+      "raw": "{\"arguments\":{\"amount\":NaN}}",
+      "stage": "parse"
+    },
+    {
+      "id": "unpaired-surrogate",
+      "description": "I-JSON rejects unpaired Unicode surrogates",
+      "raw": "{\"arguments\":{\"title\":\"\\ud800\"}}",
+      "stage": "unicode"
+    },
+    {
+      "id": "unknown-root-field",
+      "description": "The core action object is closed",
+      "changes": [
+        {"op": "add", "path": "/trace_id", "value": "trace-7"}
+      ],
+      "stage": "schema"
+    },
+    {
+      "id": "missing-policy",
+      "description": "Required policy binding cannot be omitted",
+      "changes": [
+        {"op": "remove", "path": "/policy"}
+      ],
+      "stage": "schema"
+    },
+    {
+      "id": "unsafe-integer",
+      "description": "Integers outside the interoperable range use strings",
+      "changes": [
+        {"op": "add", "path": "/arguments/amount", "value": 9007199254740993}
+      ],
+      "stage": "schema"
+    },
+    {
+      "id": "duplicate-profile-id",
+      "description": "Profile identifiers are unique before sorting",
+      "changes": [
+        {
+          "op": "replace",
+          "path": "/policy/profiles",
+          "value": [
+            {"id": "japan", "version": "draft-0.1"},
+            {"id": "japan", "version": "draft-0.2"}
+          ]
+        }
+      ],
+      "stage": "normalize"
+    },
+    {
+      "id": "null-optional-actor",
+      "description": "Unknown optional context is omitted rather than null",
+      "changes": [
+        {"op": "replace", "path": "/actors/agent", "value": null}
+      ],
+      "stage": "schema"
+    },
+    {
+      "id": "unknown-data-class",
+      "description": "Data classes use the core registry",
+      "changes": [
+        {"op": "replace", "path": "/impact/data_classes", "value": ["SECRET"]}
+      ],
+      "stage": "schema"
+    },
+    {
+      "id": "non-string-data-class",
+      "description": "Set normalization cannot coerce non-string members",
+      "changes": [
+        {"op": "replace", "path": "/impact/data_classes", "value": ["INTERNAL", 7]}
+      ],
+      "stage": "schema"
+    }
+  ]
+}
