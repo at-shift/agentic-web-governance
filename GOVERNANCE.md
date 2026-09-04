@@ -1,7 +1,7 @@
 # Governance Model
 
 **Version:** Draft 0.1  
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-09-04
 
 ## 1. Purpose
 
@@ -153,6 +153,19 @@ Approvers MUST be authorized for the target action and approval role. The
 implementation MUST record who decided, when, under which policy, and which
 request hash was decided.
 
+Approver authorization and human decision provenance are independent gates.
+When policy requires human approval, the implementation MUST establish that
+the accepted decision came through a human-controlled authorization boundary
+outside the requesting agent's delegated automation authority. Authentication
+establishes an identity or ceremony, and request-forgery protection establishes
+request integrity; neither alone proves that a human made this decision.
+
+A page button, DOM event, browser-session cookie, CSRF token or WordPress nonce,
+or asserted `authorization_source` MUST NOT by itself satisfy required human
+approval. If decision provenance cannot be verified, the action MUST remain
+pending or be denied. The verified evidence MUST be bound to the exact request
+hash, approver, assurance method, and expiry.
+
 Approval review SHOULD provide structured facts and, where possible, an
 application-generated diff. Natural-language summaries may help reviewers but
 must not replace the bound structured proposal.
@@ -218,7 +231,9 @@ action. Conditional decisions create an approval or strong-auth requirement.
 
 The proposed action is stored or represented through an upstream pending-action
 contract. The reviewer sees the bound target, arguments, data flow, risk, and
-policy reason.
+policy reason. When human approval is required, the implementation verifies the
+decision through an authorization boundary the requesting agent cannot operate
+under its delegated authority.
 
 ### Execution
 
@@ -228,6 +243,7 @@ Immediately before execution, the implementation revalidates:
 - current policy version or an explicitly pinned valid policy;
 - delegation and budget;
 - approval and request hash;
+- human decision provenance and assurance when required;
 - target state assumptions needed for safe application.
 
 ### Completion
@@ -337,6 +353,9 @@ A governance implementation SHOULD test at least:
 - unknown agent identity does not gain agent-specific privileges;
 - modified arguments invalidate approval;
 - approval cannot be replayed for a second non-idempotent action;
+- an agent that can invoke a tool and automate its page cannot satisfy required
+  human approval solely by activating that page's review controls;
+- an unavailable, false, or failing decision-provenance verifier fails closed;
 - external transmission requires a separate allow;
 - policy updates have defined effects on pending actions;
 - exhausted budgets fail closed;

@@ -1,7 +1,7 @@
 # Agentic Web Governance
 
 **Status:** Draft 0.1, Request for Comments  
-**Last reviewed:** 2026-08-28
+**Last reviewed:** 2026-09-04
 
 Agentic Web Governance is an open specification for controlling actions that AI
 agents perform on web systems on behalf of people and organizations.
@@ -17,7 +17,7 @@ Human or organization authority
               |
               v
       Protocol adapters
-       (MCP, A2A, REST)
+     (MCP, WebMCP, A2A, REST)
               |
               v
       Governance controls
@@ -50,9 +50,10 @@ adapter boundary and its portability proof rule.
 
 - Preserve human and organizational authority.
 - Apply least privilege to every delegated action.
-- Keep governance independent of MCP, A2A, and future protocols.
+- Keep governance independent of MCP, WebMCP, A2A, and future protocols.
 - Reuse upstream identity, authorization, and agent primitives where available.
 - Bind approvals to exact requests and re-check permissions at execution time.
+- Do not confuse agent-driven UI activation with verified human authorization.
 - Treat agent input and retrieved content as untrusted.
 - Record useful evidence without turning audit logs into a second data leak.
 - Separate implementable controls from research hypotheses.
@@ -78,9 +79,11 @@ adapter boundary and its portability proof rule.
 | [profiles/JAPAN.md](profiles/JAPAN.md) | Optional Japan governance profile |
 | [mappings/WORDPRESS.md](mappings/WORDPRESS.md) | Mapping to WordPress Abilities and agent infrastructure |
 | [mappings/MCP.md](mappings/MCP.md) | Mapping to Model Context Protocol |
+| [mappings/WEBMCP.md](mappings/WEBMCP.md) | Mapping to the browser and agent-facing WebMCP API |
 | [mappings/A2A.md](mappings/A2A.md) | Future mapping to the A2A protocol |
 | [rfcs/README.md](rfcs/README.md) | RFC process and proposal lifecycle |
 | [rfcs/0002-platform-adapter-boundary.md](rfcs/0002-platform-adapter-boundary.md) | Accepted platform-adapter boundary and portability proof rule |
+| [rfcs/0003-human-authorization-assurance.md](rfcs/0003-human-authorization-assurance.md) | Accepted human-authorization provenance requirement |
 | [examples/wordpress/README.md](examples/wordpress/README.md) | Experimental read-only WordPress reference plugin |
 
 The documents linked above are the canonical project definition.
@@ -97,7 +100,7 @@ Draft 0.1 defines:
 - external-transmission controls;
 - rate and iteration budgets;
 - privacy-aware evidence records;
-- adapter boundaries for WordPress, MCP, and A2A.
+- adapter boundaries for WordPress, MCP, WebMCP, and A2A.
 
 It includes reference conformance tooling for the accepted canonical action
 representation, an executable JavaScript reference kernel, and an experimental
@@ -125,6 +128,11 @@ the kernel's authority boundaries. See
 [`examples/wordpress/README.md`](examples/wordpress/README.md) for its narrower
 runtime and storage limits.
 
+The reference kernel verifies approver authority but does not yet verify that a
+required human decision originated outside the requesting agent's automation
+authority. It therefore does not implement accepted
+[RFC 0003](rfcs/0003-human-authorization-assurance.md).
+
 ## Conformance tests
 
 The RFC 0001 fixture suites run independent JavaScript and PHP paths for
@@ -145,7 +153,7 @@ Dependency versions are pinned in `package-lock.json` and `composer.lock`.
 This project is not:
 
 - a replacement for the WordPress Abilities API or official MCP Adapter;
-- a new MCP or A2A implementation;
+- a new MCP, WebMCP, or A2A implementation;
 - a generic agent runtime or workflow engine;
 - a universal agent identity, reputation, or marketplace standard;
 - a remote shell, unrestricted database tool, or arbitrary code executor;

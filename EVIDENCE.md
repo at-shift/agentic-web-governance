@@ -1,7 +1,7 @@
 # Evidence Model
 
 **Version:** Draft 0.1  
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-09-04
 
 ## 1. Purpose
 
@@ -170,11 +170,20 @@ Approval events MUST identify:
 
 - the exact request hash;
 - approver identity and authorization source;
+- authorization assurance method and independent verification result when
+  human approval is required;
 - decision time;
 - expiry;
 - approval policy;
 - single-use or replay status;
 - any structured preview or diff reference.
+
+`authorization_source` is descriptive metadata, not proof that a human made
+the decision. An event MUST NOT claim `human-approved` or an equivalent state
+unless the required decision provenance was independently verified and bound to
+the request. Evidence MUST NOT store reusable credentials, raw passkey or
+WebAuthn assertion material, or another bearer artifact merely to substantiate
+that verification.
 
 An approval record is not evidence of execution. Execution requires a separate
 terminal event.
@@ -268,6 +277,8 @@ An implementation claiming Draft 0.1 Core Conformance MUST:
 
 - record proposal/decision and terminal execution events;
 - correlate approval with the exact request hash;
+- record the authorization assurance and verification outcome when policy
+  requires human approval;
 - identify policy and schema versions;
 - preserve unknown identities as unknown;
 - redact reusable secrets;

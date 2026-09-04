@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-09-04
 
 ## 1. Purpose
 
@@ -58,7 +58,7 @@ evidence.
 | Governance metadata | Additional namespaced Ability/site policy metadata | Add only missing governance concepts |
 | Agent/client context | Validated adapter claims or Agents API execution principal | Preserve unknown status; omit unknown identity from the canonical action |
 | Delegation | Subset of current WordPress user authority | Cannot add WordPress capabilities |
-| Approval | Agents API pending action when compatible, plus product storage/UI | Bind to exact action and re-check permission |
+| Approval | Agents API pending action when compatible, plus product storage/UI and an independent human-authorization adapter | Bind to exact action, verify decision provenance when required, and re-check permission |
 | Evidence | Dedicated operational event store or adapter | Do not store secrets or use posts as a high-volume log |
 | MCP exposure | Official WordPress MCP Adapter | Do not ship a competing generic MCP server |
 | A2A exposure | Future adapter | Not required for Draft 0.1 |
@@ -198,6 +198,7 @@ contract. The WordPress implementation remains responsible for:
 - persistence selected for the product;
 - REST/admin surfaces;
 - approver authorization;
+- verification of human decision provenance when policy requires it;
 - request preview or diff;
 - policy and delegation re-check;
 - WordPress permission re-check;
@@ -205,6 +206,20 @@ contract. The WordPress implementation remains responsible for:
 - terminal evidence.
 
 No action should be materialized merely because a pending-action object exists.
+
+A logged-in WordPress session, `current_user_can()` result, REST
+`permission_callback`, and WordPress nonce remain required where applicable for
+identity, authorization, and request integrity. None of them proves by itself
+that a human made the approval decision. A DOM click is also insufficient when
+the requesting agent or its host can automate that page.
+
+Stage 3 MUST therefore provide a human-authorization adapter outside the
+requesting agent's delegated automation authority. Candidate adapters include a
+trusted host confirmation surface, an out-of-band reviewer, an organizational
+approval service, or a WebAuthn/passkey ceremony that displays and
+cryptographically binds the exact proposal. WebAuthn is one possible adapter,
+not a core requirement. Verified evidence must bind the request hash,
+authorized WordPress approver, assurance method, and expiry.
 
 ## 9. Storage guidance
 
@@ -260,6 +275,7 @@ readiness or full specification conformance.
 
 - use compatible Agents API pending-action contracts;
 - provide durable review and exact-request approval;
+- verify required human decisions through an independent authorization adapter;
 - re-check permission before execution;
 - apply external-transmission policy;
 - export evidence.
@@ -272,6 +288,8 @@ The reference implementation must test:
 - permission widening after governance allow;
 - object-level authorization mistakes;
 - CSRF on administrative and approval actions;
+- agent self-approval through a browser or DOM surface available to the same
+  agent host;
 - capability metadata disclosure;
 - approval replay and argument changes;
 - unsafe outbound HTTP and SSRF;

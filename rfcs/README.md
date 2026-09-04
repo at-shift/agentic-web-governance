@@ -56,6 +56,7 @@ Do not renumber an RFC after public discussion begins.
 |---|---|---|
 | [0001](0001-canonical-action-representation.md) | Accepted | Canonical action projection, JCS, and request hashing |
 | [0002](0002-platform-adapter-boundary.md) | Accepted | Platform-adapter boundary and implementation portability proof |
+| [0003](0003-human-authorization-assurance.md) | Accepted | Independent human-authorization provenance and assurance |
 
 ## Required content
 

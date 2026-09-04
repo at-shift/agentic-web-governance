@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-08-28
+**Last reviewed:** 2026-09-04
 
 ## 1. Evidence levels
 
@@ -77,6 +77,22 @@ Verified project use: MCP provides tools, resources, prompts, discovery,
 authorization, and optional extensions. The 2026-07-28 release uses a stateless
 core, per-request capability information, header-based routing, Multi Round-Trip
 Requests, authorization hardening, and an optional Tasks extension.
+
+### WebMCP [B]
+
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-09-03 snapshot
+- [WebMCP repository](https://github.com/webmachinelearning/webmcp)
+- [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
+- [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
+- [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
+- [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
+
+Verified project use: the 2026-09-03 draft defines a browser API for exposing
+tools to user agents and agents and includes `consequentialHint`. The annotation
+is a classification hint, not permission or approval. Issue 288 provides one
+observed example supporting the agent self-approval threat hypothesis; it does
+not establish universal browser behavior. Pull request 289 remains open, so the
+project does not depend on its proposed validation subset or error semantics.
 
 ### A2A Protocol [B]
 
@@ -176,6 +192,7 @@ Before a release, review:
 - Automattic Agents API releases and contract stability;
 - WordPress Agent User discussion;
 - MCP specification and extension changes;
+- WebMCP specification, implementation status, and approval-boundary work;
 - A2A specification changes;
 - Japan profile source versions;
 - relevant prompt-injection and agent-security research.

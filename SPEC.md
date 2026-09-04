@@ -2,7 +2,7 @@
 
 **Version:** Draft 0.1  
 **Status:** Experimental, Request for Comments  
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-09-04
 
 ## 1. Scope
 
@@ -72,6 +72,13 @@ organization permits an agent or client to exercise.
 **Approval**  
 An explicit decision about an exact proposed action. Approval is not a general
 grant of application authority.
+
+**Human authorization**  
+Verified evidence that a required approval decision originated through a
+human-controlled authorization boundary rather than through the requesting
+agent's delegated automation authority. Human authorization is distinct from
+application permission, approver authorization, authentication, and
+request-forgery protection.
 
 **Evidence**  
 A privacy-aware record that supports reconstruction of a policy decision and
@@ -300,6 +307,7 @@ data and transmission context
 policy version
 expiry
 request hash
+authorization source and assurance
 ```
 
 Canonical action version 1 and its request hash algorithm are defined by
@@ -308,6 +316,24 @@ accepted [RFC 0001](rfcs/0001-canonical-action-representation.md).
 The implementation MUST invalidate or re-request approval when any bound field
 changes. It MUST re-check application permission, delegation, policy, budget,
 and approval status immediately before execution.
+
+When policy requires human approval, the implementation MUST verify that the
+decision originated through an authorization mechanism whose accepted evidence
+cannot be produced by the requesting agent or agent host within its delegated
+automation authority. Authorization of the approver and provenance of the
+decision are separate checks; both MUST succeed.
+
+A DOM button activation, an event or user-activation signal available to the
+agent host, an authenticated browser session, a cookie, a CSRF token or
+WordPress nonce, or a claimed `authorization_source` MUST NOT by itself be
+treated as proof of a human decision. If required decision provenance cannot be
+established, the action MUST remain pending or be denied.
+
+An implementation MAY establish the boundary through a trusted user-agent
+confirmation surface, an out-of-band reviewer, an organizational approval
+service, or a cryptographically bound user-verification ceremony. The core does
+not mandate one technology. Accepted evidence MUST be bound to the proposal or
+request hash, authorized approver, assurance method, and expiry.
 
 Approval UIs SHOULD show:
 
@@ -396,6 +422,10 @@ Every protocol adapter MUST:
 7. propagate or create correlation identifiers;
 8. avoid implementing application business logic;
 9. fail closed when required governance context cannot be established.
+10. preserve the distinction between agent automation authority and any
+    required human-authorization channel;
+11. never synthesize or infer a human decision from protocol or UI activity
+    alone.
 
 Protocol-native discovery SHOULD remain protocol-native. This specification
 does not define a universal `agent.json` or equivalent discovery format.
@@ -411,6 +441,8 @@ RECEIVED
   -> POLICY_EVALUATED
   -> DENIED
      or APPROVAL_PENDING
+          -> AUTHORIZATION_VERIFIED (when human approval is required)
+          -> READY
      or READY
   -> PERMISSION_AND_POLICY_RECHECKED
   -> EXECUTING
@@ -447,16 +479,19 @@ A conforming implementation MUST preserve:
 2. **No adapter bypass:** every supported external action uses the same core
    governance checks.
 3. **Exact approval:** approval is bound to the exact action and expires.
-4. **Execution-time re-check:** permission and policy are re-evaluated before
+4. **Decision provenance:** required human approval cannot be satisfied solely
+   by evidence the requesting agent or agent host can produce through its
+   delegated automation authority.
+5. **Execution-time re-check:** permission and policy are re-evaluated before
    the side effect.
-5. **Identity honesty:** unknown identities are not invented or conflated.
-6. **Untrusted input:** agent requests, tool metadata, and retrieved content are
+6. **Identity honesty:** unknown identities are not invented or conflated.
+7. **Untrusted input:** agent requests, tool metadata, and retrieved content are
    treated as untrusted.
-7. **Data-boundary control:** external transmission is separately evaluated.
-8. **Evidence restraint:** evidence is useful, integrity-protected, and
+8. **Data-boundary control:** external transmission is separately evaluated.
+9. **Evidence restraint:** evidence is useful, integrity-protected, and
    secret-free.
-9. **Bounded operation:** payload, rate, iteration, and cost limits fail safely.
-10. **Administrative integrity:** policy and approval administration require
+10. **Bounded operation:** payload, rate, iteration, and cost limits fail safely.
+11. **Administrative integrity:** policy and approval administration require
     application authorization and request-forgery protection.
 
 The reusable threat hypotheses and mitigations are in

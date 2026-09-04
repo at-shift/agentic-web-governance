@@ -29,9 +29,9 @@ This policy covers:
 - repository automation or configuration maintained by this project;
 - accidental disclosure of secrets or non-public security material here.
 
-Vulnerabilities in WordPress, MCP, A2A, or another upstream project should be
-reported to that project unless this repository introduces or materially
-worsens the issue.
+Vulnerabilities in WordPress, MCP, WebMCP, A2A, or another upstream project
+should be reported to that project unless this repository introduces or
+materially worsens the issue.
 
 ## Threat model and trust boundaries
 
@@ -49,16 +49,20 @@ provenance and validation are explicitly established.
 1. Governance and adapters cannot widen application authority.
 2. Every supported external action crosses the same governance boundary.
 3. Approval is bound to the exact request, expires, and is replay-controlled.
-4. Mutable authorization, policy, delegation, budget, and approval state is
+4. When policy requires human approval, accepted decision evidence cannot be
+   produced solely by the requesting agent through its delegated automation
+   authority. DOM interaction, same-session authentication, request-forgery
+   tokens, and an asserted source do not alone prove a human decision.
+5. Mutable authorization, policy, delegation, budget, and approval state is
    re-checked before side effects.
-5. Client, agent, runtime, and application-principal identities remain distinct;
+6. Client, agent, runtime, and application-principal identities remain distinct;
    unknown identity is not invented.
-6. Reading application data does not authorize external disclosure.
-7. Evidence excludes reusable secrets, minimizes sensitive data, and is access
+7. Reading application data does not authorize external disclosure.
+8. Evidence excludes reusable secrets, minimizes sensitive data, and is access
    controlled.
-8. Administrative changes are authorized, request-forgery protected,
+9. Administrative changes are authorized, request-forgery protected,
    versioned, and evidenced.
-9. Payload, rate, iteration, retry, time, and cost limits fail safely.
+10. Payload, rate, iteration, retry, time, and cost limits fail safely.
 
 ## Reportable findings and severity context
 
@@ -89,10 +93,12 @@ normative specification. This policy accepts no security risk by implication.
 
 ## Known limitations
 
-The WordPress interception point, storage, evidence integrity level, multisite
-boundaries, and role mappings remain open design questions. Canonical action
-version 1 is defined by accepted RFC 0001, but no production integration claims
-conformance yet. Provider metadata is not independently verified. A fully
+Production storage, evidence integrity level, multisite boundaries, and role
+mappings remain open design questions. Canonical action version 1 is defined by
+accepted RFC 0001, but no production integration claims conformance yet. The
+reference kernel verifies approver authority but does not yet verify human
+decision provenance and therefore does not implement accepted RFC 0003.
+Provider metadata is not independently verified. A fully
 compromised application administrator already has broad application authority,
 although organizational separation and evidence integrity can still be
 security-relevant.

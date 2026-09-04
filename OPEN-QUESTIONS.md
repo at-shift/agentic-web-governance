@@ -1,6 +1,6 @@
 # Open Questions
 
-**Last reviewed:** 2026-08-26
+**Last reviewed:** 2026-09-04
 
 These questions are intentionally unresolved. They should become RFCs when a
 proposal changes the normative model.
@@ -82,6 +82,15 @@ unchecked metadata is independently verified.
 How should long-running work react when delegation, policy, or approval is
 revoked after execution starts? Cancellation, compensation, and evidence differ
 by application and protocol.
+
+### Q-021: Human-authorization mechanisms
+
+Which adapters can provide independent human decision provenance in each
+deployment: a trusted user-agent confirmation surface, out-of-band review,
+organizational approval service, WebAuthn/passkey ceremony, or another
+mechanism? Accepted [RFC 0003](rfcs/0003-human-authorization-assurance.md)
+settles the protocol-neutral invariant and conformance threshold; the portable
+assurance vocabulary and production adapter choices remain open.
 
 ## Profiles and research
 

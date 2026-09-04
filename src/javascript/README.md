@@ -42,6 +42,14 @@ The `authentication` field on an approval is not trusted by itself; the strong
 authentication port must independently verify it before the kernel records a
 strong approval.
 
+`authorizeApprover` verifies that the named approver has authority; it does not
+verify that a human originated the decision. Likewise, `authorization_source`
+is metadata rather than proof. The kernel has no independent human-decision
+provenance port and does not implement accepted
+[RFC 0003](../../rfcs/0003-human-authorization-assurance.md). A production
+adapter MUST NOT expose `recordApproval` through an agent-controllable page or
+same-session flow as though that alone were human approval.
+
 ## Run
 
 From the repository root:
