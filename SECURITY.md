@@ -96,9 +96,11 @@ normative specification. This policy accepts no security risk by implication.
 Production storage, evidence integrity level, multisite boundaries, and role
 mappings remain open design questions. Canonical action version 1 is defined by
 accepted RFC 0001, but no production integration claims conformance yet. The
-reference kernel verifies approver authority but does not yet verify human
-decision provenance and therefore does not implement accepted RFC 0003.
-Provider metadata is not independently verified. A fully
+reference kernel now requires a separate decision-provenance verifier, rejects
+missing or failed verification, and retains only its normalized assurance
+result. This implements RFC 0003's protocol-neutral enforcement boundary, but
+no production human-authorization adapter or full RFC 0003 conformance is
+provided. Provider metadata is not independently verified. A fully
 compromised application administrator already has broad application authority,
 although organizational separation and evidence integrity can still be
 security-relevant.

@@ -34,6 +34,10 @@ function makeHarness(overrides = {}) {
     budget: true,
     preconditions: true,
     approverAuthorized: true,
+    humanAuthorizationVerified: true,
+    humanAuthorizationThrows: false,
+    humanAuthorizationMethod: "reference-independent-boundary",
+    expectedHumanAuthorizationProof: "reference-human-authorization-proof",
     strongAuthenticationVerified: true,
     policyReasonCodes: undefined,
     currentAction: clone(actionManifest.base_action),
@@ -78,6 +82,25 @@ function makeHarness(overrides = {}) {
     checkBudget: async () => state.budget,
     checkPreconditions: async () => state.preconditions,
     authorizeApprover: async () => state.approverAuthorized,
+    verifyHumanAuthorization: async ({ proposal, approval, evidence }) => {
+      if (state.humanAuthorizationThrows) {
+        throw new Error("authorization verification unavailable");
+      }
+      const bound =
+        state.humanAuthorizationVerified &&
+        evidence?.proof === state.expectedHumanAuthorizationProof &&
+        evidence?.request_hash === proposal.request_hash &&
+        evidence?.approver?.type === approval.approver.type &&
+        evidence?.approver?.id === approval.approver.id &&
+        evidence?.decision === approval.decision &&
+        evidence?.method === "reference-independent-boundary" &&
+        evidence?.decided_at === approval.decided_at &&
+        evidence?.expires_at === approval.expires_at &&
+        evidence?.single_use === approval.single_use;
+      return bound
+        ? { verified: true, method: state.humanAuthorizationMethod }
+        : { verified: false };
+    },
     verifyStrongAuthentication: async () =>
       state.strongAuthenticationVerified,
     reconstructAction: async () => clone(state.currentAction),
@@ -100,14 +123,33 @@ function makeHarness(overrides = {}) {
   return { kernel, state };
 }
 
-async function approve(kernel, proposal, state, authentication = "normal") {
+async function approve(
+  kernel,
+  proposal,
+  state,
+  authentication = "normal",
+  evidenceOverrides = {},
+) {
+  const approver = { type: "wordpress-user", id: "501" };
+  const expiresAt = state.now + 300;
   return kernel.recordApproval(proposal.proposal_id, {
-    approver: { type: "wordpress-user", id: "501" },
+    approver,
     authorization_source: "reference-reviewer-policy",
     decision: "approved",
-    expires_at: state.now + 300,
+    expires_at: expiresAt,
     single_use: true,
     authentication,
+    authorization_evidence: {
+      proof: state.expectedHumanAuthorizationProof,
+      request_hash: proposal.request_hash,
+      approver: clone(approver),
+      decision: "approved",
+      method: "reference-independent-boundary",
+      decided_at: state.now,
+      expires_at: expiresAt,
+      single_use: true,
+      ...evidenceOverrides,
+    },
   });
 }
 
@@ -121,6 +163,15 @@ const tests = [
 
       const approval = await approve(kernel, proposal, state);
       assert.equal(approval.status, "recorded");
+      assert.deepEqual(approval.approval.authorization_assurance, {
+        method: "reference-independent-boundary",
+        verified: true,
+      });
+      assert.equal(approval.approval.strong_auth_verified, false);
+      assert.equal(
+        Object.hasOwn(approval.approval, "authorization_evidence"),
+        false,
+      );
 
       const execution = await kernel.execute(proposal.proposal_id);
       assert.equal(execution.status, "executed");
@@ -148,6 +199,12 @@ const tests = [
         assert.equal(Object.hasOwn(event, "action"), false);
         assert.equal(Object.hasOwn(event, "arguments"), false);
       }
+      assert.equal(
+        JSON.stringify({ approval, evidence }).includes(
+          state.expectedHumanAuthorizationProof,
+        ),
+        false,
+      );
     },
   ],
   [
@@ -219,6 +276,119 @@ const tests = [
       const approval = await approve(kernel, proposal, state);
       assert.equal(approval.reason_code, "APPROVER_NOT_AUTHORIZED");
       assert.equal(kernel.getApproval(proposal.proposal_id), undefined);
+      assert.equal(state.sideEffectCount, 0);
+    },
+  ],
+  [
+    "authorization source metadata without independent evidence fails closed",
+    async () => {
+      const { kernel, state } = makeHarness();
+      const proposal = await kernel.propose(actionManifest.base_action);
+      const approval = await kernel.recordApproval(proposal.proposal_id, {
+        approver: { type: "wordpress-user", id: "501" },
+        authorization_source: "reference-reviewer-policy",
+        decision: "approved",
+        expires_at: state.now + 300,
+        single_use: true,
+        authentication: "normal",
+      });
+
+      assert.equal(approval.reason_code, "HUMAN_AUTHORIZATION_UNVERIFIED");
+      assert.equal(kernel.getApproval(proposal.proposal_id), undefined);
+      assert.equal(
+        kernel.getProposal(proposal.proposal_id).status,
+        "pending_approval",
+      );
+      assert.equal(state.sideEffectCount, 0);
+    },
+  ],
+  [
+    "human authorization verifier denial, malformed result, and failure fail closed",
+    async () => {
+      for (const overrides of [
+        { humanAuthorizationVerified: false },
+        { humanAuthorizationMethod: "" },
+        { humanAuthorizationThrows: true },
+      ]) {
+        const { kernel, state } = makeHarness(overrides);
+        const proposal = await kernel.propose(actionManifest.base_action);
+        const approval = await approve(kernel, proposal, state);
+
+        assert.equal(approval.reason_code, "HUMAN_AUTHORIZATION_UNVERIFIED");
+        assert.equal(kernel.getApproval(proposal.proposal_id), undefined);
+        assert.equal(state.sideEffectCount, 0);
+      }
+    },
+  ],
+  [
+    "human authorization evidence is bound to the exact decision context",
+    async () => {
+      const mutations = [
+        () => ({ request_hash: `sha256:${"0".repeat(64)}` }),
+        () => ({
+          approver: { type: "wordpress-user", id: "another-reviewer" },
+        }),
+        () => ({ decision: "denied" }),
+        () => ({ method: "caller-asserted-method" }),
+        (state) => ({ decided_at: state.now - 1 }),
+        (state) => ({ expires_at: state.now + 301 }),
+        (state) => ({ single_use: false }),
+      ];
+
+      for (const mutate of mutations) {
+        const { kernel, state } = makeHarness();
+        const proposal = await kernel.propose(actionManifest.base_action);
+        const approval = await approve(
+          kernel,
+          proposal,
+          state,
+          "normal",
+          mutate(state),
+        );
+
+        assert.equal(approval.reason_code, "HUMAN_AUTHORIZATION_UNVERIFIED");
+        assert.equal(kernel.getApproval(proposal.proposal_id), undefined);
+        assert.equal(state.sideEffectCount, 0);
+      }
+    },
+  ],
+  [
+    "a verified human rejection is recorded without retaining raw evidence",
+    async () => {
+      const { kernel, state } = makeHarness();
+      const proposal = await kernel.propose(actionManifest.base_action);
+      const approver = { type: "wordpress-user", id: "501" };
+      const expiresAt = state.now + 300;
+      const rejection = await kernel.recordApproval(proposal.proposal_id, {
+        approver,
+        authorization_source: "reference-reviewer-policy",
+        decision: "denied",
+        expires_at: expiresAt,
+        single_use: true,
+        authentication: "normal",
+        authorization_evidence: {
+          proof: state.expectedHumanAuthorizationProof,
+          request_hash: proposal.request_hash,
+          approver: clone(approver),
+          decision: "denied",
+          method: "reference-independent-boundary",
+          decided_at: state.now,
+          expires_at: expiresAt,
+          single_use: true,
+        },
+      });
+
+      assert.equal(rejection.status, "recorded");
+      assert.equal(rejection.approval.decision, "denied");
+      assert.equal(rejection.approval.authorization_assurance.verified, true);
+      assert.equal(
+        JSON.stringify({ rejection, evidence: kernel.listEvidence() }).includes(
+          state.expectedHumanAuthorizationProof,
+        ),
+        false,
+      );
+      const execution = await kernel.execute(proposal.proposal_id);
+      assert.equal(execution.reason_code, "APPROVAL_NOT_APPROVED");
       assert.equal(state.sideEffectCount, 0);
     },
   ],
@@ -300,6 +470,7 @@ const tests = [
 
       const strongApproval = await approve(kernel, proposal, state, "strong");
       assert.equal(strongApproval.status, "recorded");
+      assert.equal(strongApproval.approval.strong_auth_verified, true);
       const execution = await kernel.execute(proposal.proposal_id);
       assert.equal(execution.status, "executed");
       assert.equal(state.sideEffectCount, 1);
@@ -316,6 +487,25 @@ const tests = [
       const approval = await approve(kernel, proposal, state, "strong");
       assert.equal(approval.reason_code, "STRONG_AUTH_REQUIRED");
       assert.equal(kernel.getApproval(proposal.proposal_id), undefined);
+      assert.equal(state.sideEffectCount, 0);
+    },
+  ],
+  [
+    "a later strong-auth policy does not trust an earlier strong label",
+    async () => {
+      const { kernel, state } = makeHarness();
+      const proposal = await kernel.propose(actionManifest.base_action);
+      const approval = await approve(kernel, proposal, state, "strong");
+      assert.equal(approval.status, "recorded");
+      assert.equal(approval.approval.strong_auth_verified, false);
+
+      state.policyDecision = "REQUIRE_STRONG_AUTH";
+      const execution = await kernel.execute(proposal.proposal_id);
+      assert.equal(execution.reason_code, "STRONG_AUTH_REQUIRED");
+      assert.equal(
+        kernel.getProposal(proposal.proposal_id).status,
+        "pending_approval",
+      );
       assert.equal(state.sideEffectCount, 0);
     },
   ],

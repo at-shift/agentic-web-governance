@@ -28,9 +28,12 @@ Accepted by `@at-shift` on 2026-09-04.
 
 The maintainer accepts the independent human-authorization invariant, its
 fail-closed behavior, and the protocol-neutral adapter boundary defined here.
-Acceptance settles the specification direction. It does not mean that the
-JavaScript reference kernel, WordPress example, WebMCP adapter, or any
-production mechanism implements this RFC.
+Acceptance settles the specification direction; it did not by itself mean that
+the JavaScript reference kernel, WordPress example, WebMCP adapter, or any
+production mechanism implemented this RFC. The reference kernel now implements
+the protocol-neutral verifier port and its fail-closed test contract. It does
+not supply the independent production mechanism needed to claim the full
+human-authorization path.
 
 This decision is based on the requirements being explicit, testable, and
 independent of an unresolved upstream feature. Implementations may continue to
@@ -239,9 +242,11 @@ approval should add a distinct assurance result and treat existing records as
 unverified unless their original ceremony satisfies this RFC and can be
 validated.
 
-The JavaScript reference kernel and WordPress example must continue to state
-that RFC 0003 is unimplemented until an explicit decision-provenance verifier
-and conformance tests exist.
+The JavaScript reference kernel may describe RFC 0003's protocol-neutral
+verification boundary as implemented once its mandatory verifier port and
+fail-closed tests exist. It and the WordPress example must not claim a
+production human-authorization mechanism or full RFC conformance until an
+actual independent adapter passes the conformance conditions above.
 
 ## Alternatives
 

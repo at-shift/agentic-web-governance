@@ -32,6 +32,7 @@ The kernel requires explicit application ports for:
 - budget;
 - execution preconditions;
 - approver authorization;
+- human-decision provenance verification;
 - strong-auth verification;
 - authoritative action reconstruction;
 - application execution.
@@ -44,11 +45,18 @@ strong approval.
 
 `authorizeApprover` verifies that the named approver has authority; it does not
 verify that a human originated the decision. Likewise, `authorization_source`
-is metadata rather than proof. The kernel has no independent human-decision
-provenance port and does not implement accepted
-[RFC 0003](../../rfcs/0003-human-authorization-assurance.md). A production
-adapter MUST NOT expose `recordApproval` through an agent-controllable page or
-same-session flow as though that alone were human approval.
+is metadata rather than proof. The mandatory `verifyHumanAuthorization` port
+must independently bind the proposal, approver, decision, and expiry, then
+return a normalized `{ verified: true, method }` assurance. False, malformed,
+or error results fail closed. Raw authorization evidence is passed only to that
+port and is never retained in approval or evidence records.
+
+This implements the protocol-neutral enforcement boundary and test contract
+from accepted [RFC 0003](../../rfcs/0003-human-authorization-assurance.md), but
+the repository does not ship a production human-authorization mechanism or
+claim full RFC 0003 conformance. A production adapter MUST NOT expose
+`recordApproval` through an agent-controllable page or same-session flow as
+though that alone were human approval.
 
 ## Run
 
@@ -60,10 +68,12 @@ npm run test:reference
 ```
 
 The executable example intentionally uses an in-memory approval and evidence
-path. A production integration must replace that state with durable,
-access-controlled storage and an application-appropriate atomic or idempotent
-boundary. It must also supply adapter-specific authentication, request-forgery
-protection, authorization, redaction, retention, and operational controls.
+path with a fixture provenance verifier. A production integration must replace
+that verifier with an independent authorization boundary and replace the state
+with durable, access-controlled storage and an application-appropriate atomic
+or idempotent boundary. It must also supply adapter-specific authentication,
+request-forgery protection, authorization, redaction, retention, and
+operational controls.
 
 The reference kernel does not claim Draft 0.1 Core Conformance and is not a
 WordPress plugin, MCP server, or agent runtime.

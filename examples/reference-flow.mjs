@@ -30,6 +30,7 @@ const action = {
 
 let now = 2_000_000_000;
 let sideEffectCount = 0;
+const authorizationProof = "reference-human-authorization-proof";
 const counters = new Map();
 const kernel = new ReferenceGovernanceKernel({
   hashAction,
@@ -47,6 +48,20 @@ const kernel = new ReferenceGovernanceKernel({
   checkPreconditions: async () => true,
   authorizeApprover: async ({ approval }) =>
     approval.approver.type === "reference-reviewer",
+  // A production adapter must replace this fixture with an independent boundary.
+  verifyHumanAuthorization: async ({ proposal, approval, evidence }) => ({
+    verified:
+      evidence?.proof === authorizationProof &&
+      evidence?.request_hash === proposal.request_hash &&
+      evidence?.approver?.type === approval.approver.type &&
+      evidence?.approver?.id === approval.approver.id &&
+      evidence?.decision === approval.decision &&
+      evidence?.method === "reference-independent-boundary" &&
+      evidence?.decided_at === approval.decided_at &&
+      evidence?.expires_at === approval.expires_at &&
+      evidence?.single_use === approval.single_use,
+    method: "reference-independent-boundary",
+  }),
   verifyStrongAuthentication: async () => false,
   reconstructAction: async () => structuredClone(action),
   executeAction: async () => {
@@ -63,13 +78,25 @@ const kernel = new ReferenceGovernanceKernel({
 
 const proposal = await kernel.propose(action);
 now += 10;
+const approver = { type: "reference-reviewer", id: "reviewer-9" };
+const approvalExpiresAt = now + 300;
 const approval = await kernel.recordApproval(proposal.proposal_id, {
-  approver: { type: "reference-reviewer", id: "reviewer-9" },
+  approver,
   authorization_source: "reference-reviewer-policy",
   decision: "approved",
-  expires_at: now + 300,
+  expires_at: approvalExpiresAt,
   single_use: true,
   authentication: "normal",
+  authorization_evidence: {
+    proof: authorizationProof,
+    request_hash: proposal.request_hash,
+    approver,
+    decision: "approved",
+    method: "reference-independent-boundary",
+    decided_at: now,
+    expires_at: approvalExpiresAt,
+    single_use: true,
+  },
 });
 now += 10;
 const execution = await kernel.execute(proposal.proposal_id);

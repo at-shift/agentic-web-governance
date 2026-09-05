@@ -55,6 +55,18 @@ function publicProposal(proposal) {
   });
 }
 
+function approvalForChecks(input, decidedAt) {
+  return clone({
+    approver: input.approver,
+    authorization_source: input.authorization_source,
+    decision: input.decision,
+    decided_at: decidedAt,
+    expires_at: input.expires_at,
+    single_use: input.single_use ?? true,
+    authentication: input.authentication ?? "normal",
+  });
+}
+
 export class ReferenceGovernanceKernel {
   #ports;
   #now;
@@ -73,6 +85,7 @@ export class ReferenceGovernanceKernel {
     checkBudget,
     checkPreconditions,
     authorizeApprover,
+    verifyHumanAuthorization,
     verifyStrongAuthentication,
     reconstructAction,
     executeAction,
@@ -90,6 +103,10 @@ export class ReferenceGovernanceKernel {
       checkBudget: requirePort("checkBudget", checkBudget),
       checkPreconditions: requirePort("checkPreconditions", checkPreconditions),
       authorizeApprover: requirePort("authorizeApprover", authorizeApprover),
+      verifyHumanAuthorization: requirePort(
+        "verifyHumanAuthorization",
+        verifyHumanAuthorization,
+      ),
       verifyStrongAuthentication: requirePort(
         "verifyStrongAuthentication",
         verifyStrongAuthentication,
@@ -207,12 +224,20 @@ export class ReferenceGovernanceKernel {
         return this.#rejectApproval(proposal, "APPROVAL_RECORD_INVALID");
       }
 
+      let approvalCheck;
+      try {
+        // The verifier and stored record must see the same kernel-owned time and
+        // normalized defaults; callers do not get to assert either after review.
+        approvalCheck = approvalForChecks(input, now);
+      } catch {
+        return this.#rejectApproval(proposal, "APPROVAL_RECORD_INVALID");
+      }
       let approverAuthorized = false;
       try {
         approverAuthorized =
           (await this.#ports.authorizeApprover({
             proposal: publicProposal(proposal),
-            approval: clone(input),
+            approval: clone(approvalCheck),
           })) === true;
       } catch {
         approverAuthorized = false;
@@ -221,17 +246,47 @@ export class ReferenceGovernanceKernel {
         return this.#rejectApproval(proposal, "APPROVER_NOT_AUTHORIZED");
       }
 
+      let authorizationAssurance;
+      try {
+        // Raw authorization evidence is verifier-only input. Persisting it could
+        // turn a bearer or cryptographic artifact into a second credential store.
+        const verification = await this.#ports.verifyHumanAuthorization({
+          proposal: publicProposal(proposal),
+          approval: clone(approvalCheck),
+          evidence: clone(input.authorization_evidence),
+        });
+        if (
+          verification?.verified === true &&
+          isNonEmptyString(verification.method)
+        ) {
+          authorizationAssurance = {
+            method: verification.method,
+            verified: true,
+          };
+        }
+      } catch {
+        authorizationAssurance = undefined;
+      }
+      if (!authorizationAssurance) {
+        return this.#rejectApproval(
+          proposal,
+          "HUMAN_AUTHORIZATION_UNVERIFIED",
+        );
+      }
+
+      let strongAuthenticationVerified = false;
+      // Keep the verified fact separate from the caller-controlled label so a
+      // later policy change cannot promote an unverified "strong" assertion.
       if (
         input.decision === "approved" &&
         proposal.decision.decision === "REQUIRE_STRONG_AUTH"
       ) {
-        let strongAuthenticationVerified = false;
         if (input.authentication === "strong") {
           try {
             strongAuthenticationVerified =
               (await this.#ports.verifyStrongAuthentication({
                 proposal: publicProposal(proposal),
-                approval: clone(input),
+                approval: clone(approvalCheck),
               })) === true;
           } catch {
             strongAuthenticationVerified = false;
@@ -248,11 +303,13 @@ export class ReferenceGovernanceKernel {
         request_hash: proposal.request_hash,
         approver: clone(input.approver),
         authorization_source: input.authorization_source,
+        authorization_assurance: authorizationAssurance,
         decision: input.decision,
         decided_at: now,
         expires_at: input.expires_at,
         single_use: input.single_use ?? true,
         authentication: input.authentication ?? "normal",
+        strong_auth_verified: strongAuthenticationVerified,
         replay_state: "unused",
       };
       this.#approvals.set(proposal.id, approval);
@@ -263,10 +320,12 @@ export class ReferenceGovernanceKernel {
           approval_id: approval.id,
           approver: clone(approval.approver),
           authorization_source: approval.authorization_source,
+          authorization_assurance: clone(approval.authorization_assurance),
           decision: "approved",
           expires_at: approval.expires_at,
           single_use: approval.single_use,
           authentication: approval.authentication,
+          strong_auth_verified: approval.strong_auth_verified,
         });
       } else {
         proposal.status = "denied";
@@ -274,6 +333,7 @@ export class ReferenceGovernanceKernel {
           approval_id: approval.id,
           approver: clone(approval.approver),
           authorization_source: approval.authorization_source,
+          authorization_assurance: clone(approval.authorization_assurance),
           decision: "denied",
           reason_codes: ["APPROVAL_NOT_APPROVED"],
         });
@@ -397,7 +457,8 @@ export class ReferenceGovernanceKernel {
       }
       if (
         evaluation.policy.decision === "REQUIRE_STRONG_AUTH" &&
-        approval?.authentication !== "strong"
+        (approval?.authentication !== "strong" ||
+          approval?.strong_auth_verified !== true)
       ) {
         proposal.decision = evaluation.policy;
         return this.#denyExecution(
@@ -583,9 +644,16 @@ export class ReferenceGovernanceKernel {
       !Number.isSafeInteger(approval.expires_at) ||
       approval.decided_at >= approval.expires_at ||
       typeof approval.single_use !== "boolean" ||
+      typeof approval.strong_auth_verified !== "boolean" ||
       !["unused", "used"].includes(approval.replay_state)
     ) {
       return "APPROVAL_BINDING_INVALID";
+    }
+    if (
+      approval.authorization_assurance?.verified !== true ||
+      !isNonEmptyString(approval.authorization_assurance?.method)
+    ) {
+      return "HUMAN_AUTHORIZATION_UNVERIFIED";
     }
     const now = this.#timestamp();
     if (approval.decision !== "approved" || now < approval.decided_at) {
@@ -599,7 +667,8 @@ export class ReferenceGovernanceKernel {
     }
     if (
       proposal.decision.decision === "REQUIRE_STRONG_AUTH" &&
-      approval.authentication !== "strong"
+      (approval.authentication !== "strong" ||
+        approval.strong_auth_verified !== true)
     ) {
       return "STRONG_AUTH_REQUIRED";
     }
@@ -619,7 +688,9 @@ export class ReferenceGovernanceKernel {
     const eventType =
       reasonCode === "APPROVAL_EXPIRED"
         ? "approval.expired"
-        : reasonCode.startsWith("APPROVAL_") || reasonCode === "STRONG_AUTH_REQUIRED"
+        : reasonCode.startsWith("APPROVAL_") ||
+            reasonCode === "HUMAN_AUTHORIZATION_UNVERIFIED" ||
+            reasonCode === "STRONG_AUTH_REQUIRED"
           ? "approval.rejected"
           : "execution.cancelled";
     this.#recordEvidence(proposal, eventType, {
@@ -630,6 +701,7 @@ export class ReferenceGovernanceKernel {
     if (
       reasonCode === "APPROVAL_EXPIRED" ||
       reasonCode === "APPROVAL_REQUIRED" ||
+      reasonCode === "HUMAN_AUTHORIZATION_UNVERIFIED" ||
       reasonCode === "STRONG_AUTH_REQUIRED"
     ) {
       proposal.status = "pending_approval";

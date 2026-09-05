@@ -2,7 +2,7 @@
 
 **Version:** Draft 0.1  
 **Status:** Design threat model, not a vulnerability report  
-**Last reviewed:** 2026-09-04
+**Last reviewed:** 2026-09-05
 
 All attacker stories in this document are hypotheses for design and testing.
 This repository currently contains specifications, executable conformance
@@ -69,7 +69,7 @@ flowchart TD
 |---|---|---|---|---|---|---|
 | WordPress capability call | WordPress user authority | Current user roles, object state, Ability permission callback, then stricter governance | Effective permission at execution time | Adapter, governance, Ability | WordPress permission callback plus governance deny layer | The experimental path uses `wp_ability_permission_result` and satisfies Stage 1 for its documented path; broader production coverage remains unproven |
 | Delegated agent action | Delegation grant | Core invariants, site policy, profile, delegation, capability/resource rules | Exact active grant referenced by `delegation_id` | Governance and authorized administrators | Delegation validation and execution-time re-check | Behavioral model at `GOVERNANCE.md:99-130`; storage is not selected |
-| Consequential action | Canonical proposal and approval | Request fields, policy version, expiry, approver authority, decision provenance and assurance | Immutable proposal plus digest and independently verified decision when human approval is required | Governance, authorized reviewer, authorization adapter, executor | Exact-request binding, independent human-authorization boundary, and replay control | [RFC 0001](rfcs/0001-canonical-action-representation.md) defines canonicalization; accepted [RFC 0003](rfcs/0003-human-authorization-assurance.md) defines decision provenance but is not implemented |
+| Consequential action | Canonical proposal and approval | Request fields, policy version, expiry, approver authority, decision provenance and assurance | Immutable proposal plus digest and independently verified decision when human approval is required | Governance, authorized reviewer, authorization adapter, executor | Exact-request binding, independent human-authorization boundary, and replay control | [RFC 0001](rfcs/0001-canonical-action-representation.md) defines canonicalization; the reference kernel enforces [RFC 0003](rfcs/0003-human-authorization-assurance.md)'s protocol-neutral verifier contract, but a production authorization adapter is not implemented |
 | External AI/service use | Selected application data | Read permission, data class, recipient, purpose, minimization, organization policy | Minimum approved payload | Named external recipient | Separate transmission decision | Required by `GOVERNANCE.md:173-200`; recipient integrations do not exist yet |
 | Operational accountability | Evidence events | Schema version, redaction, access, retention, export policy | Restricted append-oriented store or stronger profile | Authorized operators, reviewers, export recipients | Storage ACLs, redaction, integrity mechanism | Requirements at `EVIDENCE.md:207-264`; storage and integrity level remain open |
 | Administration | Policy and approval authority | WordPress/application authorization plus CSRF/request integrity | Authorized application role | Administrators and approvers | Capability checks, request-forgery protection, evidence | Required by `GOVERNANCE.md:255-277`; concrete roles are not defined |

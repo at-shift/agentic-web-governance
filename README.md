@@ -1,7 +1,7 @@
 # Agentic Web Governance
 
 **Status:** Draft 0.1, Request for Comments  
-**Last reviewed:** 2026-09-04
+**Last reviewed:** 2026-09-05
 
 Agentic Web Governance is an open specification for controlling actions that AI
 agents perform on web systems on behalf of people and organizations.
@@ -128,17 +128,19 @@ the kernel's authority boundaries. See
 [`examples/wordpress/README.md`](examples/wordpress/README.md) for its narrower
 runtime and storage limits.
 
-The reference kernel verifies approver authority but does not yet verify that a
-required human decision originated outside the requesting agent's automation
-authority. It therefore does not implement accepted
-[RFC 0003](rfcs/0003-human-authorization-assurance.md).
+The reference kernel now requires a separate human-authorization verifier and
+stores only its normalized assurance result. This implements the
+protocol-neutral enforcement port and test contract from accepted
+[RFC 0003](rfcs/0003-human-authorization-assurance.md), but the repository ships
+no trusted user-agent, out-of-band, or cryptographic production adapter and
+does not claim full RFC 0003 conformance.
 
 ## Conformance tests
 
 The RFC 0001 fixture suites run independent JavaScript and PHP paths for
 canonical action validation and hashing, then exercise approval binding,
-execution-time reconstruction, expiry, replay control, mutable re-checks, and
-the executable reference path:
+human-authorization provenance, execution-time reconstruction, expiry, replay
+control, mutable re-checks, and the executable reference path:
 
 ```sh
 npm ci
