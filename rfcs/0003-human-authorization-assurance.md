@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Authors:** `@at-shift`
 - **Created:** 2026-09-04
-- **Updated:** 2026-09-04
+- **Updated:** 2026-09-05
 - **Target version:** Draft 0.2
 - **Supersedes:** None
 - **Superseded by:** None
@@ -200,7 +200,7 @@ the required human-approval path.
 
 WebMCP issue 288 documents one observed agent-host behavior and motivates the
 attacker capability. It is evidence for a design hypothesis, not a universal
-claim about WebMCP. The 2026-09-03 upstream draft includes
+claim about WebMCP. The 2026-09-04 upstream draft includes
 `consequentialHint`, but annotations remain hints rather than authorization.
 WebMCP pull request 289 is open; this RFC does not depend on its proposed
 validation rules or error behavior.
