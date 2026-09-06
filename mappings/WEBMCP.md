@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-09-04 Draft Community Group Report, repository reviewed 2026-09-05  
-**Last reviewed:** 2026-09-05
+**Upstream snapshot:** 2026-09-04 Draft Community Group Report, repository reviewed 2026-09-07  
+**Last reviewed:** 2026-09-07
 
 ## 1. Purpose
 
@@ -148,6 +148,16 @@ specific registration and invocation validation behavior but remains open. An
 adapter MUST NOT depend on that proposal's exact schema subset, exception type,
 or validation timing until those semantics are adopted upstream and reviewed.
 
+WebMCP issue 298 proposes three page-enforced protections for tool-mediated
+writes: a person-owned write scope, optimistic concurrency against unread human
+edits, and page-owned cancellation for long-running writes. These protections
+are consistent with AWG's least-authority, execution-time re-check, state
+precondition, and cancellation-evidence requirements. The issue remains an open
+proposal with a limited, author-reported evaluation, so this mapping treats it
+as implementation evidence rather than adopted WebMCP semantics. Its own stated
+limit also preserves the need for Section 6: a tool-body guard does not govern a
+separate DOM automation path.
+
 ## 8. Evidence and errors
 
 Evidence should correlate WebMCP registration or invocation context with the
@@ -179,7 +189,9 @@ hint rather than an authorization assertion. Issue 288 is treated as evidence
 for a realistic design hypothesis: at least one observed agent host could both
 invoke a proposal tool and automate its page review control. It is not treated
 as proof that every WebMCP implementation behaves that way or as a confirmed
-vulnerability in this repository.
+vulnerability in this repository. Issue 298 is likewise tracked as a proposed
+defense-in-depth pattern, not as a required or universally available WebMCP
+control.
 
 ## 10. Conformance scenarios
 
@@ -194,6 +206,12 @@ A WebMCP adapter should test at least:
 - invalid inputs fail before the application side effect;
 - server-side validation catches inputs accepted or altered after browser
   validation;
+- writes outside the person- or application-owned allowed scope fail before a
+  side effect;
+- a write that would overwrite an unread intervening change fails a state
+  precondition and returns only the conflict information safe for that caller;
+- cancellation records whether any partial effect landed and does not imply
+  rollback;
 - a proposal tool creates no consequential side effect;
 - an agent that can invoke a tool and automate the page cannot self-satisfy
   required human approval through page controls alone;
@@ -207,6 +225,7 @@ A WebMCP adapter should test at least:
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
+- [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
