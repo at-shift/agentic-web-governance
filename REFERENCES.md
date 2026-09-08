@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-09-07
+**Last reviewed:** 2026-09-09
 
 ## 1. Evidence levels
 
@@ -83,8 +83,10 @@ Requests, authorization hardening, and an optional Tasks extension.
 - [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-09-04 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
+- [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
+- [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
@@ -104,8 +106,15 @@ Its limited, author-reported evaluation is useful implementation evidence for
 tool-mediated write guards, while the issue itself notes that those guards do
 not cover an agent that bypasses the tool path by automating the page. AWG
 therefore tracks the proposal as supporting evidence and does not depend on it
-as adopted WebMCP behavior. Pull request 289 remains open, so the project does
-not depend on its proposed validation subset or error semantics.
+as adopted WebMCP behavior. Issue 300 records one Chrome 152 observation where
+a tool's side effect completed but `executeTool()` rejected after the tool
+unregistered itself. Chrome's documentation states that Chrome 153 preserves
+in-flight executions after unregistration. AWG treats this as implementation
+and interoperability evidence, not as proof of universal browser behavior:
+tool registration lifetime and execution cancellation remain distinct, and an
+ambiguous failure after dispatch must be reconciled before a non-idempotent
+retry. Pull request 289 remains open, so the project does not depend on its
+proposed validation subset or error semantics.
 
 ### A2A Protocol [B]
 

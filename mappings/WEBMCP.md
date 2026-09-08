@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-09-04 Draft Community Group Report, repository reviewed 2026-09-07  
-**Last reviewed:** 2026-09-07
+**Upstream snapshot:** 2026-09-04 Draft Community Group Report, repository reviewed 2026-09-09  
+**Last reviewed:** 2026-09-09
 
 ## 1. Purpose
 
@@ -173,6 +173,19 @@ denial, and execution failure SHOULD remain distinguishable internally. Their
 WebMCP-facing representation must follow the supported upstream API while
 avoiding sensitive policy disclosure.
 
+Tool registration lifetime and in-flight execution lifetime are separate. An
+adapter MUST NOT treat removal of a tool from discovery as proof that an
+already dispatched invocation was cancelled or produced no side effect.
+Execution cancellation must use the supported per-invocation mechanism, and its
+terminal outcome must be recorded independently of registration state.
+
+If a user agent or transport reports failure after dispatch, the adapter MUST
+NOT automatically retry a non-idempotent action. It SHOULD reconcile the
+application result using an idempotency key, stable operation identifier, or
+authoritative application-state query. If the outcome cannot be established,
+evidence SHOULD preserve that uncertainty in `result_status` or reason codes
+rather than claiming failure without side effects.
+
 ## 9. Compatibility posture
 
 The upstream specification is evolving. This mapping depends only on the broad
@@ -191,7 +204,11 @@ invoke a proposal tool and automate its page review control. It is not treated
 as proof that every WebMCP implementation behaves that way or as a confirmed
 vulnerability in this repository. Issue 298 is likewise tracked as a proposed
 defense-in-depth pattern, not as a required or universally available WebMCP
-control.
+control. Issue 300 records one Chrome 152 result-delivery failure after a tool
+unregistered itself despite completing its side effect; Chrome's documentation
+states that Chrome 153 preserves in-flight executions in that case. This
+mapping does not depend on that version-specific behavior and requires outcome
+reconciliation before consequential retries.
 
 ## 10. Conformance scenarios
 
@@ -212,6 +229,10 @@ A WebMCP adapter should test at least:
   precondition and returns only the conflict information safe for that caller;
 - cancellation records whether any partial effect landed and does not imply
   rollback;
+- unregistering a tool after dispatch does not by itself mark its in-flight
+  action cancelled or prove that no side effect occurred;
+- an ambiguous failure after possible dispatch triggers result reconciliation
+  and does not automatically repeat a non-idempotent action;
 - a proposal tool creates no consequential side effect;
 - an agent that can invoke a tool and automate the page cannot self-satisfy
   required human approval through page controls alone;
@@ -224,8 +245,10 @@ A WebMCP adapter should test at least:
 - [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/)
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
+- [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
+- [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
