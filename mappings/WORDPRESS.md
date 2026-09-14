@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-09-04
+**Last reviewed:** 2026-09-15
 
 ## 1. Purpose
 
@@ -31,7 +31,7 @@ WordPress MCP Adapter
   - server and permission integration
   - protocol observability
 
-Automattic Agents API, when available
+Automattic Agents API, optional integration (0.11.2 reviewed)
   - execution-principal and agent contracts
   - access-grant and authorization contracts
   - action/tool policy contracts
@@ -45,6 +45,13 @@ Future WordPress agent identity work
 The project owns product-specific policy, durable materialization where
 upstream does not, administration, approval routing, data handling, and
 evidence.
+
+Agents API 0.11.2 provides operational substrate for recurring routines,
+including idempotent registration, generation fencing, reconciliation locking,
+and safe drain diagnostics. An AWG integration may reuse those contracts when
+compatible, but must still apply application authorization, governance budgets,
+idempotency and replay controls, outcome reconciliation, and evidence at its own
+boundary.
 
 ## 3. Core mapping
 
@@ -192,7 +199,7 @@ permanent agent table in Draft 0.1.
 
 ## 8. Approval mapping
 
-When Agents API is available and compatible, use its generic pending-action
+When Agents API is installed and compatible, use its generic pending-action
 contract. The WordPress implementation remains responsible for:
 
 - persistence selected for the product;

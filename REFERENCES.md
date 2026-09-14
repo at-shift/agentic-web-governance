@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-09-09
+**Last reviewed:** 2026-09-15
 
 ## 1. Evidence levels
 
@@ -51,12 +51,18 @@ hooks cover both direct Ability and MCP paths.
 ### Automattic Agents API [B]
 
 - [Automattic Agents API repository](https://github.com/Automattic/agents-api)
+- [Agents API 0.11.2 release](https://github.com/Automattic/agents-api/releases/tag/v0.11.2)
 
 Verified project use: the package defines generic agent, execution-principal,
 access-grant, policy, pending-action, memory, workflow, and external-client
 contracts. Its pending-action boundary leaves concrete product storage, routes,
 UI, permission ceilings, handlers, and terminal audit behavior to consumers.
-Adoption should be feature-detected and adapter-based while the project evolves.
+Version 0.11.2 also includes idempotent recurring-routine registration,
+generation fencing, authoritative reconciliation locking, and safe drain
+diagnostics. These are useful operational substrate, but do not replace AWG's
+application authorization, budgets, idempotency, outcome reconciliation, or
+evidence requirements. Adoption should be feature-detected and adapter-based
+while the project evolves.
 
 ### WordPress Agent User proposal [B]
 
@@ -80,41 +86,75 @@ Requests, authorization hardening, and an optional Tasks extension.
 
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-09-04 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-09-14 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
+- [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
+- [Pull request 302: registration and lookup algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/302)
+- [Issue 255: tool collections and progressive disclosure](https://github.com/webmachinelearning/webmcp/issues/255)
+- [Issue 306: closed duplicate of issue 255](https://github.com/webmachinelearning/webmcp/issues/306)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
+- [Issue 307: non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
+- [Issue 308: proposed preservation of tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
+- [Pull request 301: proposed `executeTool()` algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-09-04 draft defines a browser API for exposing
-tools to user agents and agents and includes `consequentialHint`. The annotation
-is a classification hint, not permission or approval. The upstream repository
-now explicitly includes headless browsing scenarios for client-side WebMCP
-tools, including transitions between human-in-the-loop and headless
-experiences. AWG treats execution mode as context rather than proof of human
-presence or a source of additional authority; the same governance boundaries
-apply in both modes. Issue 288 provides one observed example supporting the
-agent self-approval threat hypothesis; it does not establish universal browser
-behavior. Issue 298 is an open proposal for person-owned write scope,
-optimistic concurrency against unread human edits, and page-owned cancellation.
-Its limited, author-reported evaluation is useful implementation evidence for
-tool-mediated write guards, while the issue itself notes that those guards do
-not cover an agent that bypasses the tool path by automating the page. AWG
-therefore tracks the proposal as supporting evidence and does not depend on it
-as adopted WebMCP behavior. Issue 300 records one Chrome 152 observation where
-a tool's side effect completed but `executeTool()` rejected after the tool
-unregistered itself. Chrome's documentation states that Chrome 153 preserves
-in-flight executions after unregistration. AWG treats this as implementation
-and interoperability evidence, not as proof of universal browser behavior:
-tool registration lifetime and execution cancellation remain distinct, and an
-ambiguous failure after dispatch must be reconciled before a non-idempotent
-retry. Pull request 289 remains open, so the project does not depend on its
-proposed validation subset or error semantics.
+Verified project use: the 2026-09-14 draft defines a browser API for exposing
+tools to user agents and agents, includes `consequentialHint`, and records the
+provider document's origin in observed tool collections. The annotation is a
+classification hint, not permission or approval. Origin is provenance that
+must remain bound to tool identity; it does not grant application authority.
+The agent-facing observation format remains implementation-defined, so an
+adapter must not invent a missing origin or attribute one origin's policy,
+delegation, or approval to a same-named tool from another origin.
+
+The upstream repository explicitly includes headless browsing scenarios for
+client-side WebMCP tools, including transitions between human-in-the-loop and
+headless experiences. AWG treats execution mode as context rather than proof of
+human presence or a source of additional authority; the same governance
+boundaries apply in both modes. Issue 288 provides one observed example
+supporting the agent self-approval threat hypothesis; it does not establish
+universal browser behavior. Issue 298 is an open proposal for person-owned write
+scope, optimistic concurrency against unread human edits, and page-owned
+cancellation. Its limited, author-reported evaluation is useful implementation
+evidence for tool-mediated write guards, while the issue itself notes that
+those guards do not cover an agent that bypasses the tool path by automating the
+page. AWG therefore tracks the proposal as supporting evidence and does not
+depend on it as adopted WebMCP behavior.
+
+Issue 300 records one Chrome 152 observation where a tool's side effect
+completed but `executeTool()` rejected after the tool unregistered itself.
+Chrome's documentation states that Chrome 153 preserves in-flight executions
+after unregistration. AWG treats this as implementation and interoperability
+evidence, not as proof of universal browser behavior: tool registration
+lifetime and execution cancellation remain distinct, and an ambiguous failure
+after dispatch must be reconciled before a non-idempotent retry. Issue 307 is an
+open lifecycle clarification: populating a non-autosubmit declarative form may
+leave the call waiting for later submission. AWG treats that as a nonterminal
+protocol condition, not execution success, failure, or human approval, and does
+not depend on the proposed `awaiting_submission` label.
+
+Merged pull request 251 changes `executeTool()` to receive a JavaScript object
+directly and reject non-object input before dispatch. Chrome's September 11
+documentation also deprecates JSON-stringified input arguments from Chrome 155.
+A future AWG WebMCP adapter should therefore pass a serializable object and must
+not pre-stringify its arguments. Pull request 302 corrected registration
+validation ordering and malformed lookup steps without creating a new
+governance authority or replacing application-side validation.
+
+Issue 306 was closed as a duplicate of issue 255. The primary issue remains an
+open proposal for tool collections and progressive disclosure; it supports
+least-exposure discovery but cannot grant authority. Issue 308 is an open
+proposal to preserve refusal, partial-result, and completed-result information
+instead of flattening it to `UnknownError`; it does not yet define an adopted
+result envelope. Pull requests 289 and 301 remain open, so the project does not
+depend on their proposed validation, error, or execution-algorithm semantics.
 
 ### A2A Protocol [B]
 

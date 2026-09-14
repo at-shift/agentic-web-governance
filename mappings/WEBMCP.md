@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-09-04 Draft Community Group Report, repository reviewed 2026-09-09  
-**Last reviewed:** 2026-09-09
+**Upstream snapshot:** 2026-09-14 Draft Community Group Report, repository reviewed 2026-09-15  
+**Last reviewed:** 2026-09-15
 
 ## 1. Purpose
 
@@ -17,8 +17,17 @@ does not overload [`MCP.md`](MCP.md).
 ## 2. Upstream boundary
 
 The current upstream Draft Community Group Report includes a browser API for
-registering and invoking tools and a `consequentialHint` annotation. These
-contracts remain owned by WebMCP.
+registering and invoking tools, a `consequentialHint` annotation, and the
+provider document's origin in observed tool collections. These contracts remain
+owned by WebMCP. The format in which a browser agent receives observations is
+implementation-defined, so this mapping does not assume every agent-facing
+tool description carries origin.
+
+The `executeTool()` caller-facing contract accepts a JavaScript input object,
+rejects non-object values, and serializes the object for transfer to the tool's
+document. Chrome's documented transition deprecates JSON-stringified input from
+Chrome 155. An adapter therefore SHOULD pass a serializable object directly and
+MUST NOT depend on pre-stringified arguments as its normal path.
 
 The upstream repository now explicitly treats headless browsing scenarios as
 in scope where client-side WebMCP tools are reused for task completion,
@@ -26,11 +35,12 @@ including transitions between human-in-the-loop and headless experiences. The
 same clarification distinguishes WebMCP from purely server-side task completion
 and from backend-focused protocols such as MCP.
 
-Upstream annotations, descriptions, and execution-mode descriptions are
-discovery and interoperability inputs. They are not authoritative declarations
-of application permission, risk, approval, or human presence. A WebMCP
-implementation may use them to inform presentation or routing, but governance
-must derive the effective decision from application authority and policy.
+Upstream annotations, descriptions, provider origin, and execution-mode
+descriptions are discovery, provenance, and interoperability inputs. They are
+not authoritative declarations of application permission, risk, approval, or
+human presence. A WebMCP implementation may use them to inform presentation or
+routing, but governance must derive the effective decision from application
+authority and policy.
 
 ## 3. Actors and authority
 
@@ -40,7 +50,7 @@ The adapter must distinguish:
 human user or reviewer
 logical agent
 agent host, browser, or user agent
-web page and tool owner
+web page, tool owner, and tool-owning document origin
 application server
 application principal
 ```
@@ -63,9 +73,18 @@ authority granted to the agent or host.
 | Tool input schema | Protocol validation input | Application/server validation remains authoritative |
 | Tool annotations | Untrusted capability metadata | Hints may restrict treatment but never grant permission or approval |
 | `consequentialHint` | Risk-classification signal | `false`, absent, or stale metadata cannot suppress required controls |
+| Observed tool origin | Provider provenance | Bind it to tool identity; origin alone grants no permission or application authority |
 | Browser or agent identity | Client or agent context | Do not substitute it for the application principal |
 | Visible or headless execution mode | Execution context | Does not establish human presence, approval, or additional authority |
 | Tool result or error | Protocol result mapping | Do not leak policy, credentials, or sensitive application internals |
+
+When tools from multiple documents or origins are visible, an adapter MUST keep
+same-named tools distinct by binding trusted provider origin to the normalized
+tool identity. It MUST accept that origin only from a trusted browser or user
+agent observation or registration context, not from caller-asserted metadata.
+If provider provenance is missing, untrusted, or ambiguous, the adapter MUST
+fail closed rather than borrowing another origin's policy, delegation,
+classification, or approval.
 
 ## 5. Execution paths
 
@@ -148,6 +167,14 @@ specific registration and invocation validation behavior but remains open. An
 adapter MUST NOT depend on that proposal's exact schema subset, exception type,
 or validation timing until those semantics are adopted upstream and reviewed.
 
+Merged pull request 302 aligns registration validation order with Chromium and
+repairs malformed `getTools()` steps. This improves specification clarity but
+does not replace application-side validation or create authorization from a
+valid tool name, description, or input object. Pull request 301 remains open
+with additional execution-context and internal algorithm corrections, so an
+adapter MUST retain compatibility tests rather than assuming every draft
+algorithm path is stable.
+
 WebMCP issue 298 proposes three page-enforced protections for tool-mediated
 writes: a person-owned write scope, optimistic concurrency against unread human
 edits, and page-owned cancellation for long-running writes. These protections
@@ -163,6 +190,11 @@ separate DOM automation path.
 Evidence should correlate WebMCP registration or invocation context with the
 canonical proposal and terminal outcome without copying full page state, tool
 arguments, results, cookies, or credentials.
+
+When provider provenance affects routing, policy, or reconstruction, evidence
+SHOULD record the normalized tool-owning origin obtained from a trusted host
+context. It MUST NOT substitute origin for the application principal or retain
+broader URL paths and page state merely to establish provenance.
 
 Where execution mode affects a policy or security decision, evidence MAY record
 a minimized mode indicator such as `interactive` or `headless`. The indicator
@@ -185,6 +217,23 @@ application result using an idempotency key, stable operation identifier, or
 authoritative application-state query. If the outcome cannot be established,
 evidence SHOULD preserve that uncertainty in `result_status` or reason codes
 rather than claiming failure without side effects.
+
+A generic `UnknownError` after dispatch is not proof that the tool refused,
+produced no partial effect, or failed before completing. Until WebMCP adopts a
+portable outcome envelope, the adapter SHOULD preserve any trustworthy result
+or refusal information its host exposes, distinguish known refusal from known
+partial or completed effects internally, and keep an unresolved outcome
+explicitly uncertain. It MUST NOT infer retry safety from the generic error.
+
+A non-autosubmit declarative tool may populate form fields and then remain
+waiting for a later human or application submission. Field population is a
+nonterminal protocol condition: an adapter MUST NOT map it to `SUCCEEDED`,
+execution failure, a human decision, or AWG `APPROVAL_PENDING`. The latter is a
+governance state requiring verified authorization evidence; protocol workflow
+waiting establishes none. Until upstream defines portable lifecycle signaling,
+an adapter SHOULD preserve a distinct bounded waiting state when its host
+exposes one, record timeout or abandonment without claiming a terminal side
+effect outcome, and MUST NOT automatically retry or submit the form.
 
 ## 9. Compatibility posture
 
@@ -210,12 +259,33 @@ states that Chrome 153 preserves in-flight executions in that case. This
 mapping does not depend on that version-specific behavior and requires outcome
 reconciliation before consequential retries.
 
+The 2026-09-14 draft's observed tool collection carries the provider document's
+origin. This mapping adopts origin as provenance while remaining independent of
+the implementation-defined format used to expose observations to an agent.
+Issue 306 was closed as a duplicate of issue 255. The primary issue's
+tool-collection and progressive-disclosure design remains open and may improve
+least-exposure discovery, but collections do not confer authority.
+Issue 307's proposed lifecycle signals for non-autosubmit declarative tools are
+also open; this mapping requires nonterminal handling without depending on the
+suggested `awaiting_submission` label. Issue 308's proposed preservation of
+refusal and partial or completed results is also open, so this mapping preserves
+uncertainty without depending on a specific result shape. Pull requests 289 and
+301 remain open, so no adapter may rely on their proposed validation or
+algorithm corrections.
+
 ## 10. Conformance scenarios
 
 A WebMCP adapter should test at least:
 
 - an application denial remains a denial despite permissive tool metadata;
 - absent or false `consequentialHint` does not bypass policy classification;
+- same-named tools from different trusted provider origins remain distinct;
+- missing, caller-asserted, or ambiguous origin cannot inherit policy,
+  delegation, classification, or approval from a known provider;
+- provider origin never substitutes for application authorization;
+- `executeTool()` receives a serializable JavaScript object rather than a
+  pre-stringified JSON argument;
+- a non-object or unserializable input fails before tool dispatch;
 - headless execution does not bypass application authorization, governance
   policy, budgets, validation, approval, or evidence requirements;
 - a headless consequential action requiring human approval remains pending or
@@ -233,6 +303,12 @@ A WebMCP adapter should test at least:
   action cancelled or prove that no side effect occurred;
 - an ambiguous failure after possible dispatch triggers result reconciliation
   and does not automatically repeat a non-idempotent action;
+- a generic `UnknownError` does not erase a known refusal, partial effect, or
+  completed effect and never establishes retry safety;
+- populating a non-autosubmit declarative form remains nonterminal and does not
+  establish execution success or a human approval decision;
+- workflow waiting, timeout, and abandonment do not automatically retry or
+  submit the form;
 - a proposal tool creates no consequential side effect;
 - an agent that can invoke a tool and automate the page cannot self-satisfy
   required human approval through page controls alone;
@@ -246,9 +322,17 @@ A WebMCP adapter should test at least:
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
+- [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
+- [Pull request 302: registration and lookup algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/302)
+- [Issue 255: tool collections and progressive disclosure](https://github.com/webmachinelearning/webmcp/issues/255)
+- [Issue 306: closed duplicate of issue 255](https://github.com/webmachinelearning/webmcp/issues/306)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
+- [Issue 307: non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
+- [Issue 308: proposed preservation of tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
+- [Pull request 301: proposed `executeTool()` algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
