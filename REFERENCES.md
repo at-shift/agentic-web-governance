@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-09-15
+**Last reviewed:** 2026-09-28
 
 ## 1. Evidence levels
 
@@ -51,18 +51,26 @@ hooks cover both direct Ability and MCP paths.
 ### Automattic Agents API [B]
 
 - [Automattic Agents API repository](https://github.com/Automattic/agents-api)
-- [Agents API 0.11.2 release](https://github.com/Automattic/agents-api/releases/tag/v0.11.2)
+- [Agents API 0.12.0 release](https://github.com/Automattic/agents-api/releases/tag/v0.12.0)
+- [Agents API 0.12.1 release](https://github.com/Automattic/agents-api/releases/tag/v0.12.1)
+- [Agents API 0.13.0 release](https://github.com/Automattic/agents-api/releases/tag/v0.13.0)
+- [Agents API 0.14.0 release](https://github.com/Automattic/agents-api/releases/tag/v0.14.0)
+- [Agents API 0.15.0 release](https://github.com/Automattic/agents-api/releases/tag/v0.15.0)
 
 Verified project use: the package defines generic agent, execution-principal,
 access-grant, policy, pending-action, memory, workflow, and external-client
 contracts. Its pending-action boundary leaves concrete product storage, routes,
 UI, permission ceilings, handlers, and terminal audit behavior to consumers.
-Version 0.11.2 also includes idempotent recurring-routine registration,
-generation fencing, authoritative reconciliation locking, and safe drain
-diagnostics. These are useful operational substrate, but do not replace AWG's
-application authorization, budgets, idempotency, outcome reconciliation, or
-evidence requirements. Adoption should be feature-detected and adapter-based
-while the project evolves.
+Through version 0.15.0, the package also includes idempotent recurring-routine
+registration, generation fencing, authoritative reconciliation locking, safe
+drain diagnostics, bounded workflow stores, run-owned handler resolution,
+cancellation fencing, durable multi-step result envelopes, centralized
+step-type validation, and an await primitive for suspended workflows. These are
+useful operational substrate, but do not replace AWG's application
+authorization, budgets, idempotency, outcome reconciliation, approval, or
+evidence requirements. In particular, a suspended or awaiting workflow is
+nonterminal and does not establish human approval. Adoption should be
+feature-detected and adapter-based while the project evolves.
 
 ### WordPress Agent User proposal [B]
 
@@ -78,34 +86,54 @@ proprietary permanent agent identity model.
 
 - [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28)
 - [MCP 2026-07-28 release notes](https://blog.modelcontextprotocol.io/posts/2026-07-28/)
+- [MCP Skills extension](https://modelcontextprotocol.io/extensions/skills/overview)
+- [SEP-2640: Skills Extension](https://modelcontextprotocol.io/seps/2640-skills-extension)
 
 Verified project use: MCP provides tools, resources, prompts, discovery,
 authorization, and optional extensions. The 2026-07-28 release uses a stateless
 core, per-request capability information, header-based routing, Multi Round-Trip
 Requests, authorization hardening, and an optional Tasks extension.
 
+The official `io.modelcontextprotocol/skills` extension is published and
+SEP-2640 is Final. It exposes workflow instructions and supporting files through
+MCP Resources while implementation support remains incomplete. Skill identity
+is the originating server plus URI; names are not unique. Manifests and digests
+provide consistency, not trust. AWG therefore treats skill content as untrusted
+input and requires separate application authority, policy, approval, and
+evidence for any tool use, code execution, permission grant, or external action
+that follows from a loaded skill.
+
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-09-14 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-09-26 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 - [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
+- [Pull request 279: clarified `executeTool()` and schema value shapes](https://github.com/webmachinelearning/webmcp/pull/279)
 - [Pull request 302: registration and lookup algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/302)
+- [Pull request 245: tool activation and cancellation events](https://github.com/webmachinelearning/webmcp/pull/245)
+- [Pull request 253: `debugging` tool annotation](https://github.com/webmachinelearning/webmcp/pull/253)
+- [Pull request 275: Permissions Policy security mitigation](https://github.com/webmachinelearning/webmcp/pull/275)
 - [Issue 255: tool collections and progressive disclosure](https://github.com/webmachinelearning/webmcp/issues/255)
 - [Issue 306: closed duplicate of issue 255](https://github.com/webmachinelearning/webmcp/issues/306)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
 - [Issue 307: non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
-- [Issue 308: proposed preservation of tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
+- [Issue 282: proposed application-level refusal errors](https://github.com/webmachinelearning/webmcp/issues/282)
+- [Issue 308: closed proposal to preserve tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
+- [Issue 323: proposed specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
-- [Pull request 301: proposed `executeTool()` algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
+- [Pull request 301: `executeTool()` and navigable algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
+- [Pull request 311: unregistration clarification](https://github.com/webmachinelearning/webmcp/pull/311)
+- [Pull request 324: proposed omitted-input behavior](https://github.com/webmachinelearning/webmcp/pull/324)
+- [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-09-14 draft defines a browser API for exposing
+Verified project use: the 2026-09-26 draft defines a browser API for exposing
 tools to user agents and agents, includes `consequentialHint`, and records the
 provider document's origin in observed tool collections. The annotation is a
 classification hint, not permission or approval. Origin is provenance that
@@ -140,21 +168,42 @@ leave the call waiting for later submission. AWG treats that as a nonterminal
 protocol condition, not execution success, failure, or human approval, and does
 not depend on the proposed `awaiting_submission` label.
 
-Merged pull request 251 changes `executeTool()` to receive a JavaScript object
-directly and reject non-object input before dispatch. Chrome's September 11
-documentation also deprecates JSON-stringified input arguments from Chrome 155.
-A future AWG WebMCP adapter should therefore pass a serializable object and must
-not pre-stringify its arguments. Pull request 302 corrected registration
-validation ordering and malformed lookup steps without creating a new
-governance authority or replacing application-side validation.
+Merged pull requests 251 and 279 specify that `executeTool()` receives a
+discovered `RegisteredTool` and a structured JavaScript input value directly,
+while `RegisteredTool.inputSchema` is exposed as a parsed JavaScript object.
+Chrome's September 21 documentation likewise requires a serializable object and
+deprecates JSON-stringified input arguments from Chrome 155. A future AWG
+WebMCP adapter should therefore pass a serializable input object, treat the
+discovered schema as an object, and not depend on pre-stringified values. Pull
+requests 302 and 301 corrected registration validation, navigable lookup, input
+type-checking, and completion-step algorithms without creating a new governance
+authority or replacing application-side validation.
+
+Merged pull requests 245, 253, and 275 add tool-activation and cancellation
+events, a `debugging` annotation, and an explicit `Permissions-Policy: tools=()`
+security mitigation. Events improve lifecycle observability but do not prove a
+terminal outcome or rollback. `debugging` remains non-authoritative metadata
+and cannot lower policy or approval requirements. Disabling WebMCP with
+Permissions Policy reduces the exposed browser attack surface, but enabling it
+does not grant application authority.
 
 Issue 306 was closed as a duplicate of issue 255. The primary issue remains an
 open proposal for tool collections and progressive disclosure; it supports
-least-exposure discovery but cannot grant authority. Issue 308 is an open
-proposal to preserve refusal, partial-result, and completed-result information
-instead of flattening it to `UnknownError`; it does not yet define an adopted
-result envelope. Pull requests 289 and 301 remain open, so the project does not
-depend on their proposed validation, error, or execution-algorithm semantics.
+least-exposure discovery but cannot grant authority. Issue 308 was closed
+without adopting its proposed general outcome-preservation rule; refusal and
+more specific execution errors continue as separate open discussions, including
+issues 282 and 323. WebMCP still has no adopted portable result envelope, so
+AWG continues to preserve known outcomes and uncertainty internally without
+assuming a protocol result shape. Pull request 289 remains open.
+
+Pull request 311 has merged a non-normative clarification that unregistering a
+tool during its callback does not cancel an already invoked execution; separate
+cancellation or document unloading can still terminate it. This confirms the
+registration-versus-execution distinction but does not remove AWG's outcome
+reconciliation requirement. Pull request 324 remains an open proposal for
+treating omitted `executeTool()` input as an empty object, so an adapter must
+not depend on that behavior yet. Issue 312 is an open proposal for page-context
+synchronization and is not an adopted discovery or authority primitive.
 
 ### A2A Protocol [B]
 

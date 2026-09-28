@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-09-15
+**Last reviewed:** 2026-09-28
 
 ## 1. Purpose
 
@@ -31,7 +31,7 @@ WordPress MCP Adapter
   - server and permission integration
   - protocol observability
 
-Automattic Agents API, optional integration (0.11.2 reviewed)
+Automattic Agents API, optional integration (0.15.0 reviewed)
   - execution-principal and agent contracts
   - access-grant and authorization contracts
   - action/tool policy contracts
@@ -46,12 +46,19 @@ The project owns product-specific policy, durable materialization where
 upstream does not, administration, approval routing, data handling, and
 evidence.
 
-Agents API 0.11.2 provides operational substrate for recurring routines,
-including idempotent registration, generation fencing, reconciliation locking,
-and safe drain diagnostics. An AWG integration may reuse those contracts when
-compatible, but must still apply application authorization, governance budgets,
-idempotency and replay controls, outcome reconciliation, and evidence at its own
-boundary.
+Agents API through 0.15.0 provides operational substrate for recurring routines
+and durable workflows, including idempotent registration, generation fencing,
+reconciliation locking, safe drain diagnostics, bounded runtime stores,
+run-owned handler resolution, cancellation fencing, durable multi-step result
+envelopes, centralized step-type validation, and an await primitive for
+suspended steps. An AWG integration may reuse those contracts when compatible,
+but must still apply application authorization, governance budgets, idempotency
+and replay controls, approval, outcome reconciliation, and evidence at its own
+boundary. A suspended or awaiting workflow is a nonterminal runtime state, not
+AWG `APPROVAL_PENDING` and not evidence of a human decision. Cancellation
+fencing and durable results reduce ambiguity but do not by themselves prove
+that no external effect occurred or that authoritative application state now
+matches the requested outcome.
 
 ## 3. Core mapping
 

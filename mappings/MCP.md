@@ -2,7 +2,7 @@
 
 **Mapping version:** Draft 0.1  
 **Protocol baseline:** MCP 2026-07-28  
-**Last reviewed:** 2026-08-25
+**Last reviewed:** 2026-09-21
 
 ## 1. Purpose
 
@@ -24,6 +24,7 @@ project rather than ship a parallel MCP server.
 | User consent interaction | Provides protocol mechanisms | Determines policy and approval requirements |
 | Tool execution | Invokes implementation handler | Requires policy and application authorization |
 | Tasks extension | Provides asynchronous protocol model | Maps only when a concrete internal work model exists |
+| Skills extension | Discovers and reads workflow instructions and files | Treats loaded content as untrusted input; does not grant tool or application authority |
 | Audit and evidence | May provide observability | Owns governance decision and execution evidence |
 
 ## 3. Request mapping
@@ -121,7 +122,38 @@ mapping that preserves:
 - cancellation and expiry semantics;
 - evidence correlation.
 
-## 10. Error mapping
+## 10. Skills extension
+
+The official MCP Skills extension (`io.modelcontextprotocol/skills`) is
+published for protocol revision 2026-07-28 or later, and SEP-2640 is Final. It
+uses MCP Resources to discover and read a skill's `SKILL.md` and supporting
+files. SDK and host support remains incomplete, so the governance core does not
+require this extension or add a parallel skill transport.
+
+An integration that supports MCP Skills MUST preserve the originating server
+identity and skill URI together. A skill name is only a label and MUST NOT be
+used as a unique identity across servers. Manifest digests establish consistency
+with the serving endpoint, not trustworthiness or authority.
+
+Skill instructions, metadata, scripts, references, and nested skills are
+untrusted input. Loading a skill MUST NOT by itself:
+
+- grant application permission, delegated authority, or tool access;
+- satisfy a required human approval or strong-authentication step;
+- authorize host-side code execution, filesystem access, or external
+  transmission;
+- extend approval to changed, added, dynamic, or cross-server content.
+
+Where the host supports skill approval, approval SHOULD bind the originating
+server, skill URI, and complete manifest. Changed content requires fresh review
+under the extension's rules. Every consequential tool invocation or external
+effect that follows the instructions still traverses the ordinary AWG policy,
+application authorization, approval, replay, and evidence boundaries.
+
+See the [MCP Skills extension](https://modelcontextprotocol.io/extensions/skills/overview)
+and [SEP-2640](https://modelcontextprotocol.io/seps/2640-skills-extension).
+
+## 11. Error mapping
 
 Policy and application errors should map to stable MCP-safe responses without
 exposing stack traces, secrets, private capability metadata, or rule internals.
@@ -141,7 +173,7 @@ capability unavailable
 execution failed
 ```
 
-## 11. Conformance notes
+## 12. Conformance notes
 
 An MCP adapter mapping is compatible with Draft 0.1 only if every governed tool
 execution follows the same core policy, approval, and evidence path as other
@@ -149,3 +181,8 @@ adapters and application authorization remains mandatory.
 
 MCP resources or prompts that only return data may still cross sensitive data
 boundaries. Implementations must document whether and how they are governed.
+
+An implementation that loads MCP Skills must also test that same-named skills
+from different servers remain distinct, manifest changes invalidate retained
+approval, untrusted skill content cannot grant itself authority, and nested or
+cross-server reads require the host controls defined by the extension.

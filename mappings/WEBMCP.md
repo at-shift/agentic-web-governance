@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-09-14 Draft Community Group Report, repository reviewed 2026-09-15  
-**Last reviewed:** 2026-09-15
+**Upstream snapshot:** 2026-09-26 Draft Community Group Report, repository reviewed 2026-09-28  
+**Last reviewed:** 2026-09-28
 
 ## 1. Purpose
 
@@ -17,17 +17,20 @@ does not overload [`MCP.md`](MCP.md).
 ## 2. Upstream boundary
 
 The current upstream Draft Community Group Report includes a browser API for
-registering and invoking tools, a `consequentialHint` annotation, and the
-provider document's origin in observed tool collections. These contracts remain
-owned by WebMCP. The format in which a browser agent receives observations is
-implementation-defined, so this mapping does not assume every agent-facing
-tool description carries origin.
+registering and invoking tools, tool activation and cancellation events,
+`consequentialHint` and `debugging` annotations, and the provider document's
+origin in observed tool collections. These contracts remain owned by WebMCP.
+The format in which a browser agent receives observations is
+implementation-defined, so this mapping does not assume every agent-facing tool
+description carries origin.
 
-The `executeTool()` caller-facing contract accepts a JavaScript input object,
-rejects non-object values, and serializes the object for transfer to the tool's
-document. Chrome's documented transition deprecates JSON-stringified input from
-Chrome 155. An adapter therefore SHOULD pass a serializable object directly and
-MUST NOT depend on pre-stringified arguments as its normal path.
+The `executeTool()` caller-facing contract accepts a discovered
+`RegisteredTool` and a JavaScript input object, rejects non-object values, and
+serializes the object for transfer to the tool's document. The discovered
+`RegisteredTool.inputSchema` is exposed as a parsed JavaScript object. Chrome's
+documented transition deprecates JSON-stringified input from Chrome 155. An
+adapter therefore SHOULD pass a serializable object directly and MUST NOT
+depend on pre-stringified arguments or schema values as its normal path.
 
 The upstream repository now explicitly treats headless browsing scenarios as
 in scope where client-side WebMCP tools are reused for task completion,
@@ -73,7 +76,9 @@ authority granted to the agent or host.
 | Tool input schema | Protocol validation input | Application/server validation remains authoritative |
 | Tool annotations | Untrusted capability metadata | Hints may restrict treatment but never grant permission or approval |
 | `consequentialHint` | Risk-classification signal | `false`, absent, or stale metadata cannot suppress required controls |
+| `debugging` | Developer-tooling classification hint | Does not grant developer authority or lower policy, approval, or evidence requirements |
 | Observed tool origin | Provider provenance | Bind it to tool identity; origin alone grants no permission or application authority |
+| `toolactivated` / `toolcancel` events | Lifecycle-observation signals | Correlate execution state; neither event proves a terminal outcome, rollback, or human decision |
 | Browser or agent identity | Client or agent context | Do not substitute it for the application principal |
 | Visible or headless execution mode | Execution context | Does not establish human presence, approval, or additional authority |
 | Tool result or error | Protocol result mapping | Do not leak policy, credentials, or sensitive application internals |
@@ -162,18 +167,25 @@ or server MUST validate all security-relevant inputs and resource identifiers
 again before execution. Validation success does not imply authorization,
 delegation, safe data handling, or approval.
 
+The WebMCP specification now documents `Permissions-Policy: tools=()` as a
+browser-enforced mitigation that disables WebMCP for a document and its
+descendants before page script runs. Sites that do not intend to expose WebMCP
+SHOULD use this control to reduce attack surface. An enabled `tools` feature is
+availability only: it MUST NOT be interpreted as application authorization,
+delegation, approval, or permission for every script in the document.
+
 As of this mapping's upstream snapshot, WebMCP pull request 289 proposes more
 specific registration and invocation validation behavior but remains open. An
 adapter MUST NOT depend on that proposal's exact schema subset, exception type,
 or validation timing until those semantics are adopted upstream and reviewed.
 
-Merged pull request 302 aligns registration validation order with Chromium and
-repairs malformed `getTools()` steps. This improves specification clarity but
-does not replace application-side validation or create authorization from a
-valid tool name, description, or input object. Pull request 301 remains open
-with additional execution-context and internal algorithm corrections, so an
-adapter MUST retain compatibility tests rather than assuming every draft
-algorithm path is stable.
+Merged pull requests 302 and 301 align registration validation order with
+Chromium, repair malformed `getTools()` and navigable lookup steps, correct the
+inverted `executeTool()` input type check, and run completion steps in the
+required parallel context. These changes improve specification correctness but
+do not replace application-side validation or create authorization from a valid
+tool name, description, schema, or input object. An adapter MUST retain
+compatibility tests because browser implementations may lag the evolving draft.
 
 WebMCP issue 298 proposes three page-enforced protections for tool-mediated
 writes: a person-owned write scope, optimistic concurrency against unread human
@@ -190,6 +202,12 @@ separate DOM automation path.
 Evidence should correlate WebMCP registration or invocation context with the
 canonical proposal and terminal outcome without copying full page state, tool
 arguments, results, cookies, or credentials.
+
+`toolactivated` and `toolcancel` events MAY support lifecycle correlation and
+operator visibility. Evidence MUST still derive the terminal status from the
+governed execution and authoritative application state. Activation does not
+prove success, and cancellation does not prove rollback or absence of partial
+effects.
 
 When provider provenance affects routing, policy, or reconstruction, evidence
 SHOULD record the normalized tool-owning origin obtained from a trusted host
@@ -246,32 +264,44 @@ interoperability and threat-model input, not a new authority primitive. The same
 authorization, policy, approval, validation, and evidence boundaries apply to
 interactive and headless WebMCP execution.
 
-`consequentialHint` may improve classification and user experience, but it is a
-hint rather than an authorization assertion. Issue 288 is treated as evidence
-for a realistic design hypothesis: at least one observed agent host could both
+`consequentialHint` and `debugging` may improve classification and user
+experience, but they are hints rather than authorization assertions. Issue 288
+is treated as evidence for a realistic design hypothesis: at least one observed
+agent host could both
 invoke a proposal tool and automate its page review control. It is not treated
 as proof that every WebMCP implementation behaves that way or as a confirmed
 vulnerability in this repository. Issue 298 is likewise tracked as a proposed
 defense-in-depth pattern, not as a required or universally available WebMCP
-control. Issue 300 records one Chrome 152 result-delivery failure after a tool
-unregistered itself despite completing its side effect; Chrome's documentation
-states that Chrome 153 preserves in-flight executions in that case. This
-mapping does not depend on that version-specific behavior and requires outcome
-reconciliation before consequential retries.
+control. Issue 300 is now closed after recording one Chrome 152 result-delivery
+failure following self-unregistration; Chrome's documentation states that
+Chrome 153 preserves in-flight executions. Merged pull request 311 adds a
+non-normative clarification that unregistering during a callback does not
+cancel the already invoked execution, while independent cancellation and
+document unloading still apply. This mapping keeps registration and execution
+lifetime separate and requires outcome reconciliation before consequential
+retries.
 
-The 2026-09-14 draft's observed tool collection carries the provider document's
+The 2026-09-26 draft's observed tool collection carries the provider document's
 origin. This mapping adopts origin as provenance while remaining independent of
 the implementation-defined format used to expose observations to an agent.
+The same draft adds activation and cancellation event interfaces, a `debugging`
+annotation, and explicit Permissions Policy mitigation guidance. AWG adopts
+these as observability, classification, and attack-surface controls, not as new
+authority or proof of a terminal outcome.
 Issue 306 was closed as a duplicate of issue 255. The primary issue's
 tool-collection and progressive-disclosure design remains open and may improve
 least-exposure discovery, but collections do not confer authority.
 Issue 307's proposed lifecycle signals for non-autosubmit declarative tools are
 also open; this mapping requires nonterminal handling without depending on the
-suggested `awaiting_submission` label. Issue 308's proposed preservation of
-refusal and partial or completed results is also open, so this mapping preserves
-uncertainty without depending on a specific result shape. Pull requests 289 and
-301 remain open, so no adapter may rely on their proposed validation or
-algorithm corrections.
+suggested `awaiting_submission` label. Issue 308 was closed without adopting a
+general outcome-preservation rule. Refusal and specific execution errors remain
+separate open discussions, including issues 282 and 323, so this mapping
+preserves uncertainty without depending on a specific result shape. Pull
+request 289 remains open. Pull request 324 also remains open, so an adapter MUST
+NOT depend on omitted `executeTool()` input being treated as an empty object.
+Issue 312 is an open proposal for page-context synchronization. No portable
+context-notification or context-description primitive is assumed by this
+mapping.
 
 ## 10. Conformance scenarios
 
@@ -279,12 +309,18 @@ A WebMCP adapter should test at least:
 
 - an application denial remains a denial despite permissive tool metadata;
 - absent or false `consequentialHint` does not bypass policy classification;
+- `debugging: true` does not grant developer authority, bypass approval, or
+  reduce evidence requirements;
+- `Permissions-Policy: tools=()` prevents WebMCP use in the protected document
+  tree, while enabling the feature grants no application authority;
 - same-named tools from different trusted provider origins remain distinct;
 - missing, caller-asserted, or ambiguous origin cannot inherit policy,
   delegation, classification, or approval from a known provider;
 - provider origin never substitutes for application authorization;
 - `executeTool()` receives a serializable JavaScript object rather than a
   pre-stringified JSON argument;
+- a discovered `RegisteredTool.inputSchema` remains a parsed JavaScript object
+  rather than a pre-stringified schema;
 - a non-object or unserializable input fails before tool dispatch;
 - headless execution does not bypass application authorization, governance
   policy, budgets, validation, approval, or evidence requirements;
@@ -299,6 +335,8 @@ A WebMCP adapter should test at least:
   precondition and returns only the conflict information safe for that caller;
 - cancellation records whether any partial effect landed and does not imply
   rollback;
+- activation and cancellation events correlate lifecycle state without being
+  accepted as terminal success, no-effect, rollback, or human approval;
 - unregistering a tool after dispatch does not by itself mark its in-flight
   action cancelled or prove that no side effect occurred;
 - an ambiguous failure after possible dispatch triggers result reconciliation
@@ -323,16 +361,25 @@ A WebMCP adapter should test at least:
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
+- [Pull request 279: clarified `executeTool()` and schema value shapes](https://github.com/webmachinelearning/webmcp/pull/279)
 - [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
 - [Pull request 302: registration and lookup algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/302)
+- [Pull request 245: tool activation and cancellation events](https://github.com/webmachinelearning/webmcp/pull/245)
+- [Pull request 253: `debugging` tool annotation](https://github.com/webmachinelearning/webmcp/pull/253)
+- [Pull request 275: Permissions Policy security mitigation](https://github.com/webmachinelearning/webmcp/pull/275)
 - [Issue 255: tool collections and progressive disclosure](https://github.com/webmachinelearning/webmcp/issues/255)
 - [Issue 306: closed duplicate of issue 255](https://github.com/webmachinelearning/webmcp/issues/306)
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
 - [Issue 307: non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
-- [Issue 308: proposed preservation of tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
+- [Issue 282: proposed application-level refusal errors](https://github.com/webmachinelearning/webmcp/issues/282)
+- [Issue 308: closed proposal to preserve tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
+- [Issue 323: proposed specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
 - [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
-- [Pull request 301: proposed `executeTool()` algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
+- [Pull request 301: `executeTool()` and navigable algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
+- [Pull request 311: unregistration clarification](https://github.com/webmachinelearning/webmcp/pull/311)
+- [Pull request 324: proposed omitted-input behavior](https://github.com/webmachinelearning/webmcp/pull/324)
+- [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
