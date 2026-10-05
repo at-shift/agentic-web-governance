@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-09-28
+**Last reviewed:** 2026-10-05
 
 ## 1. Purpose
 
@@ -31,7 +31,7 @@ WordPress MCP Adapter
   - server and permission integration
   - protocol observability
 
-Automattic Agents API, optional integration (0.15.0 reviewed)
+Automattic Agents API, optional integration (0.16.1 reviewed)
   - execution-principal and agent contracts
   - access-grant and authorization contracts
   - action/tool policy contracts
@@ -46,19 +46,22 @@ The project owns product-specific policy, durable materialization where
 upstream does not, administration, approval routing, data handling, and
 evidence.
 
-Agents API through 0.15.0 provides operational substrate for recurring routines
+Agents API through 0.16.1 provides operational substrate for recurring routines
 and durable workflows, including idempotent registration, generation fencing,
 reconciliation locking, safe drain diagnostics, bounded runtime stores,
 run-owned handler resolution, cancellation fencing, durable multi-step result
 envelopes, centralized step-type validation, and an await primitive for
-suspended steps. An AWG integration may reuse those contracts when compatible,
-but must still apply application authorization, governance budgets, idempotency
-and replay controls, approval, outcome reconciliation, and evidence at its own
-boundary. A suspended or awaiting workflow is a nonterminal runtime state, not
-AWG `APPROVAL_PENDING` and not evidence of a human decision. Cancellation
-fencing and durable results reduce ambiguity but do not by themselves prove
-that no external effect occurred or that authoritative application state now
-matches the requested outcome.
+suspended steps, plus retry of transient InnoDB deadlocks while acquiring its
+option-store lock. Version 0.16.0 removes the one-release workflow dispatch and
+step-type fallbacks, so an integration must use the current contracts rather
+than rely on transition aliases. An AWG integration may reuse those contracts
+when compatible, but must still apply application authorization, governance
+budgets, idempotency and replay controls, approval, outcome reconciliation, and
+evidence at its own boundary. A suspended or awaiting workflow is a nonterminal
+runtime state, not AWG `APPROVAL_PENDING` and not evidence of a human decision.
+Cancellation fencing and durable results reduce ambiguity but do not by
+themselves prove that no external effect occurred or that authoritative
+application state now matches the requested outcome.
 
 ## 3. Core mapping
 
@@ -137,6 +140,16 @@ governance boundary therefore covers its permission probe and execution without
 an MCP-specific fork. Because that adapter performs both calls, an allow may be
 memoized within one PHP request and cleared at `wp_before_execute_ability` so a
 single external invocation does not reserve its rate budget twice.
+
+The current official MCP Adapter 0.7.0 adds exact MCP `2026-07-28` support,
+sessionless discovery, per-request protocol metadata, and elicitation for direct
+callable tools. It removes legacy generated validators and the associated
+validation filter, requires custom transports to use its current request or
+wire-orchestration boundary, and deprecates Composer-library bundling in favor
+of the canonical plugin. The reference plugin uses neither the removed
+internals nor a custom transport, so no implementation fork is added here. Its
+recorded Stage 1 acceptance remains evidence for the tested 0.6.1 path until a
+0.7.0 acceptance run is completed.
 
 ## 5. Ability metadata
 

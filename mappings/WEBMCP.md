@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-09-26 Draft Community Group Report, repository reviewed 2026-09-28  
-**Last reviewed:** 2026-09-28
+**Upstream snapshot:** 2026-10-02 Draft Community Group Report, repository reviewed 2026-10-05  
+**Last reviewed:** 2026-10-05
 
 ## 1. Purpose
 
@@ -30,7 +30,15 @@ serializes the object for transfer to the tool's document. The discovered
 `RegisteredTool.inputSchema` is exposed as a parsed JavaScript object. Chrome's
 documented transition deprecates JSON-stringified input from Chrome 155. An
 adapter therefore SHOULD pass a serializable object directly and MUST NOT
-depend on pre-stringified arguments or schema values as its normal path.
+depend on pre-stringified arguments or schema values as its normal path. The
+current draft treats an omitted or `undefined` input as an empty object; this
+default does not satisfy any required application fields or reduce validation.
+
+Each page observation still contains the complete tool map required by the
+draft. A non-normative clarification permits agent products to diff, cache,
+filter, or absorb repeated observations rather than append each full map to
+model input verbatim. Those context-management choices do not change the
+registered tools, provider provenance, or application authority.
 
 The upstream repository now explicitly treats headless browsing scenarios as
 in scope where client-side WebMCP tools are reused for task completion,
@@ -174,10 +182,9 @@ SHOULD use this control to reduce attack surface. An enabled `tools` feature is
 availability only: it MUST NOT be interpreted as application authorization,
 delegation, approval, or permission for every script in the document.
 
-As of this mapping's upstream snapshot, WebMCP pull request 289 proposes more
-specific registration and invocation validation behavior but remains open. An
-adapter MUST NOT depend on that proposal's exact schema subset, exception type,
-or validation timing until those semantics are adopted upstream and reviewed.
+WebMCP pull request 289 proposed more specific registration and invocation
+validation behavior but was closed without merge. An adapter MUST NOT depend
+on that proposal's exact schema subset, exception type, or validation timing.
 
 Merged pull requests 302 and 301 align registration validation order with
 Chromium, repair malformed `getTools()` and navigable lookup steps, correct the
@@ -187,15 +194,16 @@ do not replace application-side validation or create authorization from a valid
 tool name, description, schema, or input object. An adapter MUST retain
 compatibility tests because browser implementations may lag the evolving draft.
 
-WebMCP issue 298 proposes three page-enforced protections for tool-mediated
-writes: a person-owned write scope, optimistic concurrency against unread human
-edits, and page-owned cancellation for long-running writes. These protections
-are consistent with AWG's least-authority, execution-time re-check, state
-precondition, and cancellation-evidence requirements. The issue remains an open
-proposal with a limited, author-reported evaluation, so this mapping treats it
-as implementation evidence rather than adopted WebMCP semantics. Its own stated
-limit also preserves the need for Section 6: a tool-body guard does not govern a
-separate DOM automation path.
+WebMCP issue 298 and follow-up pull request 333 propose three page-enforced
+protections for tool-mediated writes: a person-owned write scope, optimistic
+concurrency against unread human edits, and page-owned cancellation for
+long-running writes. These protections are consistent with AWG's
+least-authority, execution-time re-check, state precondition, and
+cancellation-evidence requirements. The proposal remains open with a limited,
+author-reported evaluation, so this mapping treats it as implementation
+evidence rather than adopted WebMCP semantics. Its own stated limit also
+preserves the need for Section 6: a tool-body guard does not govern a separate
+DOM automation path.
 
 ## 8. Evidence and errors
 
@@ -281,7 +289,7 @@ document unloading still apply. This mapping keeps registration and execution
 lifetime separate and requires outcome reconciliation before consequential
 retries.
 
-The 2026-09-26 draft's observed tool collection carries the provider document's
+The 2026-10-02 draft's observed tool collection carries the provider document's
 origin. This mapping adopts origin as provenance while remaining independent of
 the implementation-defined format used to expose observations to an agent.
 The same draft adds activation and cancellation event interfaces, a `debugging`
@@ -297,9 +305,15 @@ suggested `awaiting_submission` label. Issue 308 was closed without adopting a
 general outcome-preservation rule. Refusal and specific execution errors remain
 separate open discussions, including issues 282 and 323, so this mapping
 preserves uncertainty without depending on a specific result shape. Pull
-request 289 remains open. Pull request 324 also remains open, so an adapter MUST
-NOT depend on omitted `executeTool()` input being treated as an empty object.
-Issue 312 is an open proposal for page-context synchronization. No portable
+request 289 was closed without merge. Pull request 324 merged and now specifies
+that omitted or `undefined` `executeTool()` input becomes an empty object; this
+does not bypass schema or application validation. Pull request 264 adds
+non-normative observation context-management guidance while preserving the
+complete observed tool map. Pull request 330 removes the origin-keyed
+agent-cluster precondition, so an adapter MUST NOT treat `Origin-Agent-Cluster`
+as a WebMCP authority or availability requirement. Pull request 333 and issue
+312 remain open proposals for page-enforced write boundaries and page-context
+synchronization. No portable
 context-notification or context-description primitive is assumed by this
 mapping.
 
@@ -322,6 +336,8 @@ A WebMCP adapter should test at least:
 - a discovered `RegisteredTool.inputSchema` remains a parsed JavaScript object
   rather than a pre-stringified schema;
 - a non-object or unserializable input fails before tool dispatch;
+- omitted or `undefined` input becomes an empty object but still fails when the
+  action contract requires fields;
 - headless execution does not bypass application authorization, governance
   policy, budgets, validation, approval, or evidence requirements;
 - a headless consequential action requiring human approval remains pending or
@@ -376,10 +392,13 @@ A WebMCP adapter should test at least:
 - [Issue 282: proposed application-level refusal errors](https://github.com/webmachinelearning/webmcp/issues/282)
 - [Issue 308: closed proposal to preserve tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
 - [Issue 323: proposed specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
-- [Pull request 289: proposed schema validation](https://github.com/webmachinelearning/webmcp/pull/289)
+- [Pull request 289: closed schema-validation proposal](https://github.com/webmachinelearning/webmcp/pull/289)
 - [Pull request 301: `executeTool()` and navigable algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
 - [Pull request 311: unregistration clarification](https://github.com/webmachinelearning/webmcp/pull/311)
-- [Pull request 324: proposed omitted-input behavior](https://github.com/webmachinelearning/webmcp/pull/324)
+- [Pull request 324: omitted input becomes an empty object](https://github.com/webmachinelearning/webmcp/pull/324)
+- [Pull request 264: observation context-management clarification](https://github.com/webmachinelearning/webmcp/pull/264)
+- [Pull request 330: removed origin-keyed agent-cluster requirement](https://github.com/webmachinelearning/webmcp/pull/330)
+- [Pull request 333: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/pull/333)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
