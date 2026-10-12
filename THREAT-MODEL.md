@@ -2,7 +2,7 @@
 
 **Version:** Draft 0.1  
 **Status:** Design threat model, not a vulnerability report  
-**Last reviewed:** 2026-09-15
+**Last reviewed:** 2026-10-12
 
 All attacker stories in this document are hypotheses for design and testing.
 This repository currently contains specifications, executable conformance
@@ -218,12 +218,12 @@ flowchart TD
   collections, but the agent-facing observation format remains
   implementation-defined. An adapter cannot assume origin is present or trusted
   without an explicit host contract.
-- WebMCP issue 307 reports an unresolved non-autosubmit declarative-tool
-  lifecycle ambiguity. Its suggested waiting-state designs are not assumed to
-  be standardized or implemented by WebMCP hosts.
-- WebMCP issue 308 proposes preserving refusal, partial-result, and
-  completed-result information across the execution boundary. It remains open,
-  and no portable result envelope or retry-safety signal is assumed.
+- WebMCP pull request 338 removed the declarative API from the specification.
+  Issue 307's waiting-state designs are proposal evidence for an API under
+  separate exploration, not a current WebMCP requirement.
+- WebMCP issue 308 closed without a portable outcome envelope. Pull request 339
+  now maps platform failures to specific DOMException types, but those classes
+  do not establish side-effect outcome or retry safety.
 - Cancellation and rollback depend on the application capability and external
   service. The specification does not assume every action is reversible.
 - Durable storage, evidence integrity, multisite scope, role mappings, a
@@ -246,7 +246,7 @@ flowchart TD
 | P0 | **Hypothesis: unauthorized external transmission.** An agent that may read WordPress data sends it to an unapproved AI provider or purpose. | Read permission is incorrectly treated as disclosure permission, or recipient context is omitted. | Personal, sensitive, confidential, or contractual data exposure. | Separate transmission policy and data classes. | Require named recipient and purpose, minimize/redact payload, evaluate provider metadata, require approval where policy says, record recipient without copying full payload. | `SPEC.md:355-383`, `GOVERNANCE.md:173-200`, `EVIDENCE.md:167-206` |
 | P1 | **Hypothesis: forged or conflated identity.** Self-asserted client metadata is treated as a trusted agent identity or delegation subject. | Adapter fails issuer/signature validation or maps client == agent == user. | Access to identity-specific policy, quotas, or grants. | Identity honesty and claim provenance requirements. | Store issuer and validation status, use adapter-specific trust rules, omit unknown identity from the canonical action, and key budgets only on reliable identities. | `SPEC.md:166-200`, `SPEC.md:384-398` |
 | P1 | **Hypothesis: stale authorization or unread state change before a write.** User role, object ownership, policy, delegation, budget, or target state changes between review or read and execution. | Execution trusts proposal-time authority or a previously read target version. | Action executes after authority was removed or overwrites a person's intervening change. | Execution-time re-check lifecycle. | Re-evaluate all mutable controls, invalidate approvals on material policy change, use target version/precondition checks for race-prone resources, and return only safely disclosable conflict information. | `GOVERNANCE.md:218-248`, `GOVERNANCE.md:278-299`, [WebMCP issue 298](https://github.com/webmachinelearning/webmcp/issues/298) |
-| P1 | **Hypothesis: generic execution error causes an unsafe retry.** A caller receives `UnknownError` after dispatch and treats it as proof that no effect occurred, even though the tool refused deliberately, completed partially, or completed before the boundary failed. | The protocol flattens result information and the action is non-idempotent or consequential. | Duplicate writes, repeated external transmission, or bypass of a deliberate refusal path. | AWG requires replay protection, reconciliation, and explicit uncertainty after ambiguous dispatch. | Preserve trustworthy result and refusal information, use idempotency keys or stable operation identifiers, query authoritative state, record uncertainty, and never infer retry safety from a generic transport error. | [`mappings/WEBMCP.md`](mappings/WEBMCP.md), [WebMCP issue 308](https://github.com/webmachinelearning/webmcp/issues/308) |
+| P1 | **Hypothesis: execution error causes an unsafe retry.** A caller receives `OperationError`, `AbortError`, or another failure after dispatch and treats it as proof that no effect occurred, even though the tool refused deliberately, completed partially, or completed before the boundary failed. | The failure class does not establish application outcome and the action is non-idempotent or consequential. | Duplicate writes, repeated external transmission, or bypass of a deliberate refusal path. | AWG requires replay protection, reconciliation, and explicit uncertainty after ambiguous dispatch. | Preserve trustworthy result and refusal information, use idempotency keys or stable operation identifiers, query authoritative state, record uncertainty, and never infer retry safety from an exception after dispatch. | [`mappings/WEBMCP.md`](mappings/WEBMCP.md), [WebMCP pull request 339](https://github.com/webmachinelearning/webmcp/pull/339), [WebMCP issue 308](https://github.com/webmachinelearning/webmcp/issues/308) |
 | P1 | **Hypothesis: policy administration compromise.** CSRF, weak role mapping, or session theft changes policies, classifications, provider approvals, or emergency controls. | Authorized admin browser or endpoint lacks request integrity or least-privilege role checks. | Broad weakening of future decisions and concealment of data flows. | Administrative authorization, CSRF protection, policy versioning, evidence. | Use narrow capabilities, nonces/request-forgery protection, step-up auth for high-impact policy changes, immutable versions, alerts and reviewable diffs. | `GOVERNANCE.md:255-299` |
 | P1 | **Hypothesis: evidence leaks secrets or personal data.** Full arguments, results, headers, prompts, or exports are logged. | Generic logging or debug mode captures sensitive payloads. | Secondary data breach; credentials may enable broader compromise. | Explicit secret exclusions and minimization rules. | Allowlist evidence fields, capability-specific redaction, separate protected incident artifacts, test nested and encoded secret forms, restrict exports. | `EVIDENCE.md:120-149`, `EVIDENCE.md:224-264` |
 | P1 | **Hypothesis: evidence tampering or silent loss.** An attacker with application write access modifies or deletes events, or logging fails while actions continue. | Evidence shares the same authority as ordinary plugin data and has no failure visibility. | Loss of accountability, incident reconstruction, and approval proof. | Append-oriented design and documented integrity limits. | Restrict write/delete capabilities, monitor pipeline failure, use signed export manifests or external append storage for stronger profiles, evidence deletion/export. | `EVIDENCE.md:207-264` |

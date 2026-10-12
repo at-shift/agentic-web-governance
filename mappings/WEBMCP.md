@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-10-02 Draft Community Group Report, repository reviewed 2026-10-05  
-**Last reviewed:** 2026-10-05
+**Upstream snapshot:** 2026-10-09 Draft Community Group Report, repository reviewed 2026-10-12  
+**Last reviewed:** 2026-10-12
 
 ## 1. Purpose
 
@@ -16,13 +16,19 @@ does not overload [`MCP.md`](MCP.md).
 
 ## 2. Upstream boundary
 
-The current upstream Draft Community Group Report includes a browser API for
-registering and invoking tools, tool activation and cancellation events,
-`consequentialHint` and `debugging` annotations, and the provider document's
-origin in observed tool collections. These contracts remain owned by WebMCP.
-The format in which a browser agent receives observations is
-implementation-defined, so this mapping does not assume every agent-facing tool
-description carries origin.
+The current upstream Draft Community Group Report includes an imperative
+browser API for registering and invoking tools, tool activation and
+cancellation events, `consequentialHint` and `debugging` annotations, and the
+provider document's origin in observed tool collections. These contracts remain
+owned by WebMCP. The format in which a browser agent receives observations is
+implementation-defined, so this mapping does not assume every agent-facing
+tool description carries origin.
+
+The declarative API was removed from the specification on 2026-10-08 and
+remains under exploration in a separate explainer. AWG therefore has no current
+declarative-WebMCP conformance dependency. Host-specific or future declarative
+flows still require the same application authorization, nonterminal-state,
+approval, replay, and evidence controls when they are implemented.
 
 The `executeTool()` caller-facing contract accepts a discovered
 `RegisteredTool` and a JavaScript input object, rejects non-object values, and
@@ -244,22 +250,25 @@ authoritative application-state query. If the outcome cannot be established,
 evidence SHOULD preserve that uncertainty in `result_status` or reason codes
 rather than claiming failure without side effects.
 
-A generic `UnknownError` after dispatch is not proof that the tool refused,
-produced no partial effect, or failed before completing. Until WebMCP adopts a
-portable outcome envelope, the adapter SHOULD preserve any trustworthy result
-or refusal information its host exposes, distinguish known refusal from known
-partial or completed effects internally, and keep an unresolved outcome
-explicitly uncertain. It MUST NOT infer retry safety from the generic error.
+The specification now maps platform failures to `NotFoundError` for a missing
+tool, `DataError` for invalid input, `OperationError` for a rejected tool promise
+or unserializable result, and `AbortError` when the target document unloads.
+These exception names improve classification but do not prove whether an
+application side effect occurred, preserve every tool-defined refusal, or make
+a retry safe. An adapter SHOULD preserve trustworthy result and refusal
+information its host exposes, distinguish known refusal from known partial or
+completed effects internally, and keep an unresolved outcome explicitly
+uncertain. It MUST NOT infer retry safety from an exception after dispatch.
 
-A non-autosubmit declarative tool may populate form fields and then remain
-waiting for a later human or application submission. Field population is a
-nonterminal protocol condition: an adapter MUST NOT map it to `SUCCEEDED`,
-execution failure, a human decision, or AWG `APPROVAL_PENDING`. The latter is a
-governance state requiring verified authorization evidence; protocol workflow
-waiting establishes none. Until upstream defines portable lifecycle signaling,
-an adapter SHOULD preserve a distinct bounded waiting state when its host
-exposes one, record timeout or abandonment without claiming a terminal side
-effect outcome, and MUST NOT automatically retry or submit the form.
+The current specification has no declarative tool lifecycle. If a host-specific
+or future declarative flow populates fields and then waits for later submission,
+that waiting is nonterminal and MUST NOT be mapped to `SUCCEEDED`, execution
+failure, a human decision, or AWG `APPROVAL_PENDING`. The latter is a governance
+state requiring verified authorization evidence; protocol workflow waiting
+establishes none. An adapter SHOULD preserve a distinct bounded waiting state
+when its host exposes one, record timeout or abandonment without claiming a
+terminal side-effect outcome, and MUST NOT automatically retry or submit the
+form.
 
 ## 9. Compatibility posture
 
@@ -289,7 +298,7 @@ document unloading still apply. This mapping keeps registration and execution
 lifetime separate and requires outcome reconciliation before consequential
 retries.
 
-The 2026-10-02 draft's observed tool collection carries the provider document's
+The 2026-10-09 draft's observed tool collection carries the provider document's
 origin. This mapping adopts origin as provenance while remaining independent of
 the implementation-defined format used to expose observations to an agent.
 The same draft adds activation and cancellation event interfaces, a `debugging`
@@ -299,13 +308,16 @@ authority or proof of a terminal outcome.
 Issue 306 was closed as a duplicate of issue 255. The primary issue's
 tool-collection and progressive-disclosure design remains open and may improve
 least-exposure discovery, but collections do not confer authority.
-Issue 307's proposed lifecycle signals for non-autosubmit declarative tools are
-also open; this mapping requires nonterminal handling without depending on the
-suggested `awaiting_submission` label. Issue 308 was closed without adopting a
-general outcome-preservation rule. Refusal and specific execution errors remain
-separate open discussions, including issues 282 and 323, so this mapping
-preserves uncertainty without depending on a specific result shape. Pull
-request 289 was closed without merge. Pull request 324 merged and now specifies
+Pull request 338 removed the declarative API from the specification. Issue 307's
+suggested lifecycle signals now remain proposal evidence for an API still being
+explored separately; this mapping preserves nonterminal handling for any host
+that exposes such a flow without claiming current WebMCP conformance. Issue 308
+was closed without adopting a general outcome-preservation rule. Pull request
+339 closed issue 323 by adopting platform-error mappings to `NotFoundError`,
+`DataError`, `OperationError`, and `AbortError`; issue 282's application-level
+refusal design remains open. This mapping uses the adopted failure classes but
+preserves outcome uncertainty and replay protection independently. Pull request
+289 was closed without merge. Pull request 324 merged and now specifies
 that omitted or `undefined` `executeTool()` input becomes an empty object; this
 does not bypass schema or application validation. Pull request 264 adds
 non-normative observation context-management guidance while preserving the
@@ -357,10 +369,11 @@ A WebMCP adapter should test at least:
   action cancelled or prove that no side effect occurred;
 - an ambiguous failure after possible dispatch triggers result reconciliation
   and does not automatically repeat a non-idempotent action;
-- a generic `UnknownError` does not erase a known refusal, partial effect, or
-  completed effect and never establishes retry safety;
-- populating a non-autosubmit declarative form remains nonterminal and does not
-  establish execution success or a human approval decision;
+- `NotFoundError`, `DataError`, `OperationError`, and `AbortError` map the
+  platform-defined failure classes without establishing side-effect outcome or
+  retry safety;
+- a host-specific or future declarative waiting state remains nonterminal and
+  does not establish execution success or a human approval decision;
 - workflow waiting, timeout, and abandonment do not automatically retry or
   submit the form;
 - a proposal tool creates no consequential side effect;
@@ -388,10 +401,10 @@ A WebMCP adapter should test at least:
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
-- [Issue 307: non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
+- [Issue 307: proposed non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
 - [Issue 282: proposed application-level refusal errors](https://github.com/webmachinelearning/webmcp/issues/282)
 - [Issue 308: closed proposal to preserve tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
-- [Issue 323: proposed specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
+- [Issue 323: specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
 - [Pull request 289: closed schema-validation proposal](https://github.com/webmachinelearning/webmcp/pull/289)
 - [Pull request 301: `executeTool()` and navigable algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
 - [Pull request 311: unregistration clarification](https://github.com/webmachinelearning/webmcp/pull/311)
@@ -399,6 +412,8 @@ A WebMCP adapter should test at least:
 - [Pull request 264: observation context-management clarification](https://github.com/webmachinelearning/webmcp/pull/264)
 - [Pull request 330: removed origin-keyed agent-cluster requirement](https://github.com/webmachinelearning/webmcp/pull/330)
 - [Pull request 333: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/pull/333)
+- [Pull request 338: declarative API removed from the specification](https://github.com/webmachinelearning/webmcp/pull/338)
+- [Pull request 339: platform execution errors mapped to DOMException types](https://github.com/webmachinelearning/webmcp/pull/339)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)

@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-10-05
+**Last reviewed:** 2026-10-12
 
 ## 1. Evidence levels
 
@@ -118,7 +118,7 @@ that follows from a loaded skill.
 
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-02 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-09 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
@@ -134,10 +134,10 @@ that follows from a loaded skill.
 - [Issue 288: page-side approval and agent-controlled UI](https://github.com/webmachinelearning/webmcp/issues/288)
 - [Issue 298: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/issues/298)
 - [Issue 300: unregistration and in-flight execution](https://github.com/webmachinelearning/webmcp/issues/300)
-- [Issue 307: non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
+- [Issue 307: proposed non-autosubmit declarative-tool lifecycle](https://github.com/webmachinelearning/webmcp/issues/307)
 - [Issue 282: proposed application-level refusal errors](https://github.com/webmachinelearning/webmcp/issues/282)
 - [Issue 308: closed proposal to preserve tool outcomes](https://github.com/webmachinelearning/webmcp/issues/308)
-- [Issue 323: proposed specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
+- [Issue 323: specific execution errors](https://github.com/webmachinelearning/webmcp/issues/323)
 - [Pull request 289: closed schema-validation proposal](https://github.com/webmachinelearning/webmcp/pull/289)
 - [Pull request 301: `executeTool()` and navigable algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/301)
 - [Pull request 311: unregistration clarification](https://github.com/webmachinelearning/webmcp/pull/311)
@@ -145,18 +145,21 @@ that follows from a loaded skill.
 - [Pull request 264: observation context-management clarification](https://github.com/webmachinelearning/webmcp/pull/264)
 - [Pull request 330: removed origin-keyed agent-cluster requirement](https://github.com/webmachinelearning/webmcp/pull/330)
 - [Pull request 333: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/pull/333)
+- [Pull request 338: declarative API removed from the specification](https://github.com/webmachinelearning/webmcp/pull/338)
+- [Pull request 339: platform execution errors mapped to DOMException types](https://github.com/webmachinelearning/webmcp/pull/339)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-10-02 draft defines a browser API for exposing
-tools to user agents and agents, includes `consequentialHint`, and records the
-provider document's origin in observed tool collections. The annotation is a
-classification hint, not permission or approval. Origin is provenance that
-must remain bound to tool identity; it does not grant application authority.
-The agent-facing observation format remains implementation-defined, so an
-adapter must not invent a missing origin or attribute one origin's policy,
-delegation, or approval to a same-named tool from another origin.
+Verified project use: the 2026-10-09 draft defines an imperative browser API
+for exposing tools to user agents and agents, includes `consequentialHint`, and
+records the provider document's origin in observed tool collections. The
+annotation is a classification hint, not permission or approval. Origin is
+provenance that must remain bound to tool identity; it does not grant
+application authority. The agent-facing observation format remains
+implementation-defined, so an adapter must not invent a missing origin or
+attribute one origin's policy, delegation, or approval to a same-named tool
+from another origin.
 
 The upstream repository explicitly includes headless browsing scenarios for
 client-side WebMCP tools, including transitions between human-in-the-loop and
@@ -178,11 +181,11 @@ Chrome's documentation states that Chrome 153 preserves in-flight executions
 after unregistration. AWG treats this as implementation and interoperability
 evidence, not as proof of universal browser behavior: tool registration
 lifetime and execution cancellation remain distinct, and an ambiguous failure
-after dispatch must be reconciled before a non-idempotent retry. Issue 307 is an
-open lifecycle clarification: populating a non-autosubmit declarative form may
-leave the call waiting for later submission. AWG treats that as a nonterminal
-protocol condition, not execution success, failure, or human approval, and does
-not depend on the proposed `awaiting_submission` label.
+after dispatch must be reconciled before a non-idempotent retry. Pull request
+338 removed the declarative API from the specification while leaving it under
+exploration in a separate explainer. Issue 307's non-autosubmit lifecycle
+discussion is therefore proposal evidence for a possible future API, not a
+current WebMCP protocol condition or AWG dependency.
 
 Merged pull requests 251 and 279 specify that `executeTool()` receives a
 discovered `RegisteredTool` and a structured JavaScript input value directly,
@@ -208,12 +211,16 @@ does not grant application authority.
 Issue 306 was closed as a duplicate of issue 255. The primary issue remains an
 open proposal for tool collections and progressive disclosure; it supports
 least-exposure discovery but cannot grant authority. Issue 308 was closed
-without adopting its proposed general outcome-preservation rule; refusal and
-more specific execution errors continue as separate open discussions, including
-issues 282 and 323. WebMCP still has no adopted portable result envelope, so
-AWG continues to preserve known outcomes and uncertainty internally without
-assuming a protocol result shape. Pull request 289 was closed without merge, so
-its proposed browser-side schema subset and error behavior were not adopted.
+without adopting its proposed general outcome-preservation rule. Merged pull
+request 339 closed issue 323 by assigning platform failures to `NotFoundError`,
+`DataError`, `OperationError`, and `AbortError`. These exception classes improve
+failure classification but do not report whether a consequential side effect
+occurred, distinguish every application refusal, or establish retry safety.
+Issue 282's application-level refusal discussion remains open. AWG therefore
+continues to preserve known outcomes and uncertainty internally without
+assuming a portable application result envelope. Pull request 289 was closed
+without merge, so its proposed browser-side schema subset and error behavior
+were not adopted.
 
 Pull request 311 has merged a non-normative clarification that unregistering a
 tool during its callback does not cancel an already invoked execution; separate
