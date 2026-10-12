@@ -8,7 +8,8 @@ implementations rather than test doubles.
 ## Pinned stack
 
 - WordPress 7.1
-- Official WordPress MCP Adapter 0.6.1
+- Official WordPress MCP Adapter 0.7.0
+- MCP protocol `2026-07-28` sessionless HTTP requests
 - PHP 8.3+
 - MySQL 8.4+
 - `agentic-web-governance-reference` from the current checkout
@@ -26,9 +27,10 @@ installation. The web server listens on `127.0.0.1:8081`.
 
 `verify.php` passes only when all of these statements are true:
 
-1. The running application is exactly WordPress 7.1 with MCP Adapter 0.6.1.
-2. An unauthenticated MCP `initialize` request is rejected.
-3. Authenticated clients can initialize a session and list the default tools.
+1. The running application is exactly WordPress 7.1 with MCP Adapter 0.7.0.
+2. An unauthenticated sessionless MCP discovery request is rejected.
+3. An authenticated client can list the default tools without creating a
+   legacy MCP session.
 4. MCP discovery includes `agentic-web-governance/site-summary`.
 5. A capability-less WordPress user reaches the target Ability boundary but is
    denied by the Ability's own application permission.
@@ -43,10 +45,12 @@ installation. The web server listens on `127.0.0.1:8081`.
     fatal error.
 
 The test-only must-use plugin lowers the MCP Adapter's transport and execute
-wrapper baselines from `read` to the authenticated-user pseudo-capability
-`exist`. This does not grant the target Ability: it lets the E2E test prove that
-the target WordPress `permission_callback` remains authoritative. The fixture
-is installed only in this ignored local runtime.
+wrapper baselines from `read` to the `exist` pseudo-capability only after
+Application Password authentication establishes a WordPress principal.
+Anonymous requests receive `do_not_allow`. This does not grant the target
+Ability: it lets the E2E test prove that the target WordPress
+`permission_callback` remains authoritative. The fixture is installed only in
+this ignored local runtime.
 
 ## Run
 

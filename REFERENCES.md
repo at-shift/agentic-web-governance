@@ -52,8 +52,11 @@ removes legacy generated validators and their validation filter, requires
 custom transports to use the current request/orchestration boundary, and
 deprecates bundling the adapter as a Composer library in favor of installing
 the canonical plugin. The AWG reference plugin does not extend those removed
-internals or bundle the adapter. Its deployed Stage 1 acceptance result remains
-historical evidence against 0.6.1 rather than an unverified 0.7.0 result.
+internals or bundle the adapter. On 2026-10-12, the isolated reference E2E
+completed with `ACCEPTED` against 0.7.0 using exact MCP `2026-07-28`, including
+sessionless discovery, authenticated execution, application-permission denial,
+rate limiting, and minimized evidence. The earlier deployed HTTPS result
+remains separate historical evidence against 0.6.1.
 
 ### Automattic Agents API [B]
 

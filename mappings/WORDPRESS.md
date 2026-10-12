@@ -134,12 +134,13 @@ registration-time callback wrapper and a second security-sensitive execution
 path. Compatibility can be reconsidered as a separate adapter if demonstrated
 deployment demand outweighs that cost.
 
-The official MCP Adapter 0.6.1 delegates Ability-backed tools to
-`WP_Ability::check_permissions()` and `WP_Ability::execute()`. The same
-governance boundary therefore covers its permission probe and execution without
-an MCP-specific fork. Because that adapter performs both calls, an allow may be
-memoized within one PHP request and cleared at `wp_before_execute_ability` so a
-single external invocation does not reserve its rate budget twice.
+The tested official MCP Adapter 0.6.1 and 0.7.0 paths delegate Ability-backed
+tools to `WP_Ability::check_permissions()` and `WP_Ability::execute()`. The same
+governance boundary therefore covers its permission probe and execution
+without an MCP-specific fork. Because that adapter performs both calls, an
+allow may be memoized within one PHP request and cleared at
+`wp_before_execute_ability` so a single external invocation does not reserve
+its rate budget twice.
 
 The current official MCP Adapter 0.7.0 adds exact MCP `2026-07-28` support,
 sessionless discovery, per-request protocol metadata, and elicitation for direct
@@ -147,9 +148,9 @@ callable tools. It removes legacy generated validators and the associated
 validation filter, requires custom transports to use its current request or
 wire-orchestration boundary, and deprecates Composer-library bundling in favor
 of the canonical plugin. The reference plugin uses neither the removed
-internals nor a custom transport, so no implementation fork is added here. Its
-recorded Stage 1 acceptance remains evidence for the tested 0.6.1 path until a
-0.7.0 acceptance run is completed.
+internals nor a custom transport, so no implementation fork is added here. The
+0.7.0 sessionless acceptance run confirms that this boundary remains effective
+under exact MCP `2026-07-28` projection.
 
 ## 5. Ability metadata
 
@@ -287,9 +288,13 @@ Stage 1 control path and isolated boundary tests. On 2026-08-26, the deployed
 HTTPS acceptance verifier completed with `ACCEPTED` against WordPress 7.1 and
 the official MCP Adapter 0.6.1. It proved authenticated principal binding,
 MCP-only discovery, governed read-only execution, evidence-producing policy
-decisions, and fail-closed rate-limit denial. The Stage 1 exit condition is
-therefore satisfied for this reference path; this does not claim production
-readiness or full specification conformance.
+decisions, and fail-closed rate-limit denial. On 2026-10-12, the isolated local
+E2E also completed with `ACCEPTED` against MCP Adapter 0.7.0 using exact MCP
+`2026-07-28` sessionless requests. That run additionally proves strict object
+encoding for empty tool arguments and rejects anonymous discovery before the
+target Ability boundary. The Stage 1 exit condition is therefore satisfied for
+this reference path; this does not claim production readiness or full
+specification conformance.
 
 ### Stage 2: Scoped write delegation
 

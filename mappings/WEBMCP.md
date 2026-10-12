@@ -8,7 +8,9 @@
 
 This mapping applies the Agentic Web Governance core to WebMCP, the browser API
 through which a web application exposes tools to user agents and agents. It
-does not define a WebMCP implementation or replace the evolving upstream API.
+does not replace the evolving upstream API. The experimental implementation in
+[`examples/webmcp/`](../examples/webmcp/) demonstrates only the imperative,
+same-origin adapter boundary described here.
 
 WebMCP and the network-oriented Model Context Protocol have related tool
 concepts but distinct trust and execution boundaries. This mapping therefore
@@ -29,6 +31,12 @@ remains under exploration in a separate explainer. AWG therefore has no current
 declarative-WebMCP conformance dependency. Host-specific or future declarative
 flows still require the same application authorization, nonterminal-state,
 approval, replay, and evidence controls when they are implemented.
+
+The reference adapter feature-detects `document.modelContext.registerTool()`,
+derives provider origin from the owning document, passes structured input to
+the governance kernel, and returns expected denial or approval states as
+application results. Its deterministic tests exercise the adapter contract;
+they are not evidence that a particular browser ships WebMCP.
 
 The `executeTool()` caller-facing contract accepts a discovered
 `RegisteredTool` and a JavaScript input object, rejects non-object values, and

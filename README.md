@@ -85,6 +85,7 @@ adapter boundary and its portability proof rule.
 | [rfcs/0002-platform-adapter-boundary.md](rfcs/0002-platform-adapter-boundary.md) | Accepted platform-adapter boundary and portability proof rule |
 | [rfcs/0003-human-authorization-assurance.md](rfcs/0003-human-authorization-assurance.md) | Accepted human-authorization provenance requirement |
 | [examples/wordpress/README.md](examples/wordpress/README.md) | Experimental read-only WordPress reference plugin |
+| [examples/webmcp/README.md](examples/webmcp/README.md) | Experimental imperative WebMCP protocol adapter |
 
 The documents linked above are the canonical project definition.
 
@@ -127,6 +128,11 @@ reachable. The WordPress example adds an application adapter without changing
 the kernel's authority boundaries. See
 [`examples/wordpress/README.md`](examples/wordpress/README.md) for its narrower
 runtime and storage limits.
+
+The WebMCP example adds a same-origin imperative protocol adapter with explicit
+feature detection and structured application outcomes. It does not polyfill
+WebMCP or count as a second application adapter for the RFC 0002 portability
+proof. See [`examples/webmcp/README.md`](examples/webmcp/README.md).
 
 The reference kernel now requires a separate human-authorization verifier and
 stores only its normalized assurance result. This implements the

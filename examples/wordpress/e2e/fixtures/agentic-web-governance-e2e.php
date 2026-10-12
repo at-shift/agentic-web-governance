@@ -18,7 +18,10 @@ if ( ! defined( 'AWG_E2E' ) || true !== AWG_E2E ) {
 // authenticated user reaches the target callback. The target still has to grant
 // its own `read` capability and governance checks.
 $authenticated_outer_gate = static function (): string {
-	return 'exist';
+	// WordPress maps `exist` to true even for the anonymous user. Select it only
+	// after Application Password authentication has established a principal;
+	// otherwise the transport discovery endpoint would become public.
+	return get_current_user_id() > 0 ? 'exist' : 'do_not_allow';
 };
 
 add_filter( 'mcp_adapter_default_transport_permission_user_capability', $authenticated_outer_gate );

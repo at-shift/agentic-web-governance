@@ -4,7 +4,7 @@
 
 **WordPress:** 7.1+
 
-**MCP Adapter:** Official WordPress MCP Adapter 0.6.1+
+**MCP Adapter:** Official WordPress MCP Adapter 0.7.0
 
 This directory contains the first executable WordPress integration. It keeps
 WordPress Abilities as the capability registry and the official MCP Adapter as
@@ -93,7 +93,7 @@ The repository-level boundary tests do not require WordPress:
 npm run test:wordpress
 ```
 
-For acceptance against actual WordPress 7.1 and the official MCP Adapter 0.6.1,
+For acceptance against actual WordPress 7.1 and the official MCP Adapter 0.7.0,
 use the isolated local environment in [`e2e/`](e2e/):
 
 ```sh
@@ -142,6 +142,11 @@ deployed HTTPS WordPress 7.1 installation using the official MCP Adapter 0.6.1.
 The run proved unauthenticated rejection, Application Password principal
 binding, MCP session initialization, Ability discovery, governed read-only
 execution, and denial of the call beyond the configured rate limit.
+
+On 2026-10-12, the isolated local E2E completed with `ACCEPTED` against the
+official MCP Adapter 0.7.0 using exact MCP `2026-07-28` sessionless requests.
+That result verifies the current reference path and strict input projection but
+is not a deployed HTTPS acceptance result.
 
 This result satisfies the Stage 1 reference-path exit condition. It is not a
 claim of production readiness, full specification conformance, or portability

@@ -6,12 +6,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORDPRESS_DIR="${SCRIPT_DIR}/runtime/wordpress"
 DOWNLOAD_DIR="${SCRIPT_DIR}/runtime/downloads"
 WORDPRESS_ARCHIVE="${DOWNLOAD_DIR}/wordpress-7.1.tar.gz"
-MCP_ARCHIVE="${DOWNLOAD_DIR}/mcp-adapter-0.6.1.zip"
+MCP_VERSION="0.7.0"
+MCP_ARCHIVE="${DOWNLOAD_DIR}/mcp-adapter-${MCP_VERSION}.zip"
 
 WORDPRESS_URL="https://wordpress.org/wordpress-7.1.tar.gz"
 WORDPRESS_SHA256="05a5f89138f632b7329f1202f2a0553c5f7fe4daf8e4b9ca7ebae9b9466b9e86"
-MCP_URL="https://github.com/WordPress/mcp-adapter/releases/download/v0.6.1/mcp-adapter.zip"
-MCP_SHA256="1c3cd47c32e99b4e7d8690a44a7890256e92a8b96f61776cbe1894e5483cf676"
+MCP_URL="https://github.com/WordPress/mcp-adapter/releases/download/v${MCP_VERSION}/mcp-adapter.zip"
+MCP_SHA256="9168c18dbd018428ff14ee28e7018aa0399d4b8819b7c98b406f6610731c3a79"
 PHP_BIN="${AWG_E2E_PHP:-php}"
 
 if ! PHP_BIN="$(command -v "${PHP_BIN}")"; then
@@ -80,8 +81,13 @@ if [[ ! -f "${WORDPRESS_DIR}/wp-includes/version.php" ]]; then
 	rmdir "${SCRIPT_DIR}/runtime/wordpress-extract"
 fi
 
-if [[ ! -f "${WORDPRESS_DIR}/wp-content/plugins/mcp-adapter/mcp-adapter.php" || ! -f "${WORDPRESS_DIR}/wp-content/plugins/mcp-adapter/vendor/autoload.php" ]]; then
-	echo "Extracting MCP Adapter 0.6.1"
+MCP_PLUGIN_FILE="${WORDPRESS_DIR}/wp-content/plugins/mcp-adapter/mcp-adapter.php"
+if [[ ! -f "${MCP_PLUGIN_FILE}" ]] ||
+	! grep -Eq "^[[:space:]*#/]*Version:[[:space:]]*${MCP_VERSION}([[:space:]]|$)" "${MCP_PLUGIN_FILE}" ||
+	[[ ! -f "${WORDPRESS_DIR}/wp-content/plugins/mcp-adapter/vendor/autoload.php" ]]; then
+	# A cached older plugin is not compatible evidence. Replace it before the
+	# acceptance run so the asserted version and exercised code are identical.
+	echo "Extracting MCP Adapter ${MCP_VERSION}"
 	rm -rf "${WORDPRESS_DIR}/wp-content/plugins/mcp-adapter"
 	unzip -q "${MCP_ARCHIVE}" -d "${WORDPRESS_DIR}/wp-content/plugins"
 fi

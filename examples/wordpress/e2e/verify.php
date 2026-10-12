@@ -8,7 +8,7 @@
 declare(strict_types=1);
 
 const AWG_E2E_ENDPOINT = 'http://127.0.0.1:8081/wp-json/mcp/mcp-adapter-default-server';
-const AWG_E2E_PROTOCOL = '2025-11-25';
+const AWG_E2E_PROTOCOL = '2026-07-28';
 const AWG_E2E_ABILITY  = 'agentic-web-governance/site-summary';
 
 $runtime_dir     = __DIR__ . '/runtime';
@@ -35,7 +35,7 @@ assert_true(
 	'Reference plugin is inactive.'
 );
 $mcp_data = get_plugin_data( WP_PLUGIN_DIR . '/mcp-adapter/mcp-adapter.php', false, false );
-assert_same( '0.6.1', $mcp_data['Version'] ?? null, 'MCP Adapter version' );
+assert_same( '0.7.0', $mcp_data['Version'] ?? null, 'MCP Adapter version' );
 pass( 'Pinned WordPress and MCP Adapter versions are active' );
 
 $debug_log = WP_CONTENT_DIR . '/debug.log';
@@ -48,24 +48,22 @@ $unauthenticated = request(
 	array(
 		'jsonrpc' => '2.0',
 		'id'      => 1,
-		'method'  => 'initialize',
-		'params'  => initialize_params(),
+		'method'  => 'tools/list',
+		'params'  => array(),
 	)
 );
 assert_true(
 	in_array( $unauthenticated['status'], array( 401, 403 ), true ),
-	'Unauthenticated initialize was not rejected.'
+	'Unauthenticated tools/list was not rejected.'
 );
 assert_true( empty( $unauthenticated['headers']['mcp-session-id'] ), 'Rejected request created a session.' );
-pass( 'Unauthenticated MCP initialization is rejected' );
+pass( 'Unauthenticated sessionless MCP discovery is rejected' );
 
 $admin_auth = array( $credentials['admin_username'], $credentials['admin_app_password'] );
 $blocked_auth = array( $credentials['blocked_username'], $credentials['blocked_app_password'] );
-$admin_session = initialize_session( $admin_auth, 10 );
-$blocked_session = initialize_session( $blocked_auth, 20 );
-pass( 'Authenticated MCP sessions initialize for both test principals' );
 
-$tools = mcp_call( $admin_auth, $admin_session, 11, 'tools/list' );
+$tools = mcp_call( $admin_auth, 11, 'tools/list' );
+assert_true( empty( $tools['headers']['mcp-session-id'] ), 'Sessionless discovery created a session.' );
 $tool_names = array_column( $tools['result']['tools'] ?? array(), 'name' );
 foreach (
 	array(
@@ -76,9 +74,9 @@ foreach (
 ) {
 	assert_true( in_array( $expected_tool, $tool_names, true ), 'Missing MCP tool: ' . $expected_tool );
 }
-pass( 'The default MCP server lists its three Ability tools' );
+pass( 'The 2026 sessionless server lists its three Ability tools' );
 
-$discovery = call_tool( $admin_auth, $admin_session, 12, 'mcp-adapter-discover-abilities', array() );
+$discovery = call_tool( $admin_auth, 12, 'mcp-adapter-discover-abilities', array() );
 assert_false( $discovery['result']['isError'] ?? true, 'Ability discovery returned an error.' );
 $abilities = $discovery['result']['structuredContent']['abilities'] ?? array();
 assert_true(
@@ -89,7 +87,7 @@ pass( 'The MCP-only reference Ability is discoverable' );
 
 reset_governance_state( (int) $credentials['admin_user_id'] );
 
-$blocked = execute_reference_ability( $blocked_auth, $blocked_session, 21 );
+$blocked = execute_reference_ability( $blocked_auth, 21 );
 assert_true( true === ( $blocked['result']['isError'] ?? false ), 'Capability-less user was not denied.' );
 assert_contains(
 	'Permission denied',
@@ -100,7 +98,7 @@ pass( 'The target WordPress permission callback remains authoritative' );
 
 $successful_results = array();
 for ( $index = 1; $index <= 10; ++$index ) {
-	$response = execute_reference_ability( $admin_auth, $admin_session, 100 + $index );
+	$response = execute_reference_ability( $admin_auth, 100 + $index );
 	assert_false( $response['result']['isError'] ?? true, 'Authorized call ' . $index . ' failed.' );
 	$result = $response['result']['structuredContent'] ?? array();
 	assert_true( true === ( $result['success'] ?? false ), 'Authorized call did not report success.' );
@@ -112,7 +110,7 @@ assert_same( 'Agentic Web Governance E2E', $summary['name'] ?? null, 'Ability si
 assert_same( 'http://127.0.0.1:8081/', $summary['url'] ?? null, 'Ability home URL' );
 pass( 'Ten authorized MCP calls return the expected site summary' );
 
-$limited = execute_reference_ability( $admin_auth, $admin_session, 111 );
+$limited = execute_reference_ability( $admin_auth, 111 );
 assert_true( true === ( $limited['result']['isError'] ?? false ), 'The eleventh call was not denied.' );
 assert_contains( 'Governance policy denied', tool_text( $limited ), 'Governance denial was not returned through MCP.' );
 pass( 'The eleventh call is denied by governance' );
@@ -171,47 +169,7 @@ pass( 'The accepted flow emits no PHP runtime warnings or fatal errors' );
 
 echo "\nWordPress MCP governance E2E: ACCEPTED\n";
 
-function initialize_params(): array {
-	return array(
-		'protocolVersion' => AWG_E2E_PROTOCOL,
-		'capabilities'    => new stdClass(),
-		'clientInfo'      => array(
-			'name'    => 'agentic-web-governance-e2e',
-			'version' => '0.1.0',
-		),
-	);
-}
-
-function initialize_session( array $auth, int $id ): string {
-	$response = request(
-		$auth,
-		array(
-			'jsonrpc' => '2.0',
-			'id'      => $id,
-			'method'  => 'initialize',
-			'params'  => initialize_params(),
-		)
-	);
-	assert_same( 200, $response['status'], 'Initialize HTTP status' );
-	assert_same( AWG_E2E_PROTOCOL, $response['json']['result']['protocolVersion'] ?? null, 'Negotiated MCP protocol' );
-
-	$session = $response['headers']['mcp-session-id'][0] ?? null;
-	assert_true( is_string( $session ) && '' !== $session, 'Initialize response omitted Mcp-Session-Id.' );
-
-	$notification = request(
-		$auth,
-		array(
-			'jsonrpc' => '2.0',
-			'method'  => 'notifications/initialized',
-		),
-		$session
-	);
-	assert_same( 202, $notification['status'], 'Initialized notification HTTP status' );
-
-	return $session;
-}
-
-function mcp_call( array $auth, string $session, int $id, string $method, array $params = array() ): array {
+function mcp_call( array $auth, int $id, string $method, array $params = array() ): array {
 	$response = request(
 		$auth,
 		array(
@@ -219,50 +177,69 @@ function mcp_call( array $auth, string $session, int $id, string $method, array 
 			'id'      => $id,
 			'method'  => $method,
 			'params'  => $params,
-		),
-		$session
+		)
 	);
-	assert_same( 200, $response['status'], $method . ' HTTP status' );
+	if ( 200 !== $response['status'] ) {
+		fail( $method . ' HTTP status expected 200, got ' . $response['status'] . '. Response: ' . $response['body'] );
+	}
 	assert_true( is_array( $response['json'] ), $method . ' did not return JSON.' );
 	assert_false( isset( $response['json']['error'] ), $method . ' returned a JSON-RPC error.' );
 
-	return $response['json'];
+	return array_merge( $response['json'], array( 'headers' => $response['headers'] ) );
 }
 
-function call_tool( array $auth, string $session, int $id, string $tool, array $arguments ): array {
+function call_tool( array $auth, int $id, string $tool, array $arguments ): array {
 	return mcp_call(
 		$auth,
-		$session,
 		$id,
 		'tools/call',
 		array(
 			'name'      => $tool,
-			'arguments' => $arguments,
+			'arguments' => array() === $arguments ? new stdClass() : $arguments,
 		)
 	);
 }
 
-function execute_reference_ability( array $auth, string $session, int $id ): array {
+function execute_reference_ability( array $auth, int $id ): array {
 	return call_tool(
 		$auth,
-		$session,
 		$id,
 		'mcp-adapter-execute-ability',
 		array(
 			'ability_name' => AWG_E2E_ABILITY,
-			'parameters'   => array(),
+			'parameters'   => new stdClass(),
 		)
 	);
 }
 
-function request( ?array $auth, array $payload, ?string $session = null ): array {
+function request( ?array $auth, array $payload ): array {
+	$method = $payload['method'] ?? null;
+	if ( ! is_string( $method ) ) {
+		fail( 'MCP request method is missing.' );
+	}
+	$params = is_array( $payload['params'] ?? null ) ? $payload['params'] : array();
+	// MCP 2026-07-28 is sessionless. Each request carries the exact revision and
+	// client context, so this verifier cannot accidentally pass by reusing a
+	// legacy 2025 session negotiated by an initialize request.
+	$params['_meta'] = array(
+		'io.modelcontextprotocol/protocolVersion'    => AWG_E2E_PROTOCOL,
+		'io.modelcontextprotocol/clientCapabilities' => new stdClass(),
+		'io.modelcontextprotocol/clientInfo'         => array(
+			'name'    => 'agentic-web-governance-e2e',
+			'version' => '0.1.0',
+		),
+	);
+	$payload['params'] = $params;
+
 	$headers = array(
 		'Accept: application/json, text/event-stream',
 		'Content-Type: application/json',
+		'MCP-Protocol-Version: ' . AWG_E2E_PROTOCOL,
+		'Mcp-Method: ' . $method,
 	);
-	if ( null !== $session ) {
-		$headers[] = 'Mcp-Session-Id: ' . $session;
-		$headers[] = 'MCP-Protocol-Version: ' . AWG_E2E_PROTOCOL;
+	if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
+		$name_field = 'resources/read' === $method ? 'uri' : 'name';
+		$headers[] = 'Mcp-Name: ' . (string) ( $params[ $name_field ] ?? '' );
 	}
 
 	$response_headers = array();
