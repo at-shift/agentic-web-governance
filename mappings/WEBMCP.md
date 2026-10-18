@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-10-09 Draft Community Group Report, repository reviewed 2026-10-12  
-**Last reviewed:** 2026-10-12
+**Upstream snapshot:** 2026-10-16 Draft Community Group Report, repository reviewed 2026-10-18  
+**Last reviewed:** 2026-10-18
 
 ## 1. Purpose
 
@@ -306,7 +306,7 @@ document unloading still apply. This mapping keeps registration and execution
 lifetime separate and requires outcome reconciliation before consequential
 retries.
 
-The 2026-10-09 draft's observed tool collection carries the provider document's
+The 2026-10-16 draft's observed tool collection carries the provider document's
 origin. This mapping adopts origin as provenance while remaining independent of
 the implementation-defined format used to expose observations to an agent.
 The same draft adds activation and cancellation event interfaces, a `debugging`
@@ -337,10 +337,27 @@ synchronization. No portable
 context-notification or context-description primitive is assumed by this
 mapping.
 
+The October 16 draft includes merged PRs 337, 345, and 347. These correct
+detached-document execution, inactive-document notification, and registration
+rechecks after schema serialization. In particular, a same-name registration
+created during serialization must not be overwritten. The reference adapter
+awaits the host's registration promise and propagates rejection; it does not
+emulate platform registration or treat discovery as an authority grant.
+
+PR 348 proposes replacing `RegisteredTool` dictionaries with a UUID-backed
+`Tool` interface. It remains open on 2026-10-18. If adopted, review tool-handle
+identity, nullable schema/annotation fields, and the proposed restrictions on
+spreading, JSON serialization, and structured cloning. No such migration is
+required or claimed by the current adapter.
+
 ## 10. Conformance scenarios
 
 A WebMCP adapter should test at least:
 
+- host registration rejection, including `InvalidStateError` and
+  `NotAllowedError`, propagates without a fallback tool registry;
+- cancellation received while proposal evaluation is pending prevents later
+  execution dispatch;
 - an application denial remains a denial despite permissive tool metadata;
 - absent or false `consequentialHint` does not bypass policy classification;
 - `debugging: true` does not grant developer authority, bypass approval, or
@@ -422,6 +439,10 @@ A WebMCP adapter should test at least:
 - [Pull request 333: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/pull/333)
 - [Pull request 338: declarative API removed from the specification](https://github.com/webmachinelearning/webmcp/pull/338)
 - [Pull request 339: platform execution errors mapped to DOMException types](https://github.com/webmachinelearning/webmcp/pull/339)
+- [Pull request 337: concurrency and detached-document algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/337)
+- [Pull request 345: inactive-document unregistration and registration checks](https://github.com/webmachinelearning/webmcp/pull/345)
+- [Pull request 347: duplicate-name recheck after schema serialization](https://github.com/webmachinelearning/webmcp/pull/347)
+- [Pull request 348: proposed UUID-backed Tool interface](https://github.com/webmachinelearning/webmcp/pull/348)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)

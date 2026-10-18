@@ -26,3 +26,26 @@ $authenticated_outer_gate = static function (): string {
 
 add_filter( 'mcp_adapter_default_transport_permission_user_capability', $authenticated_outer_gate );
 add_filter( 'mcp_adapter_execute_ability_capability', $authenticated_outer_gate );
+
+// This capability exists only in the isolated fixture and is intentionally
+// absent from MCP discovery, even for an authenticated administrator.
+add_action(
+	'wp_abilities_api_init',
+	static function (): void {
+		wp_register_ability(
+			'agentic-web-governance/e2e-hidden',
+			array(
+				'label'               => 'awg-private-fixture-marker',
+				'description'         => 'awg-private-fixture-marker',
+				'category'            => 'agentic-web-governance',
+				'input_schema'        => array( 'type' => 'object' ),
+				'execute_callback'    => static function (): array {
+					return array( 'secret' => 'awg-private-fixture-marker' );
+				},
+				'permission_callback' => '__return_true',
+				'meta'                => array( 'mcp' => array( 'public' => false ) ),
+			)
+		);
+	},
+	20
+);

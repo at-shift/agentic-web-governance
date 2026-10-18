@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-10-12
+**Last reviewed:** 2026-10-18
 
 ## 1. Evidence levels
 
@@ -26,6 +26,9 @@ An evidence level is not a security rating or endorsement.
 - [`wp_register_ability()` reference](https://developer.wordpress.org/reference/functions/wp_register_ability/)
 - [Abilities REST API endpoints](https://developer.wordpress.org/apis/abilities-api/rest-api-endpoints/)
 - [WP-CLI `wp ability`](https://developer.wordpress.org/cli/commands/ability/)
+- [WordPress Core: content-query development commit](https://github.com/WordPress/wordpress-develop/commit/213ecca2)
+- [WordPress Core: users-query development commit](https://github.com/WordPress/wordpress-develop/commit/39981fd0)
+- [WordPress Core: settings-get development commit](https://github.com/WordPress/wordpress-develop/commit/b6512b1e)
 
 Verified project use: WordPress provides a central registry for machine-readable
 capabilities with JSON Schema, execution callbacks, and permission callbacks.
@@ -33,10 +36,19 @@ The reference implementation requires WordPress 7.1 because it adds the
 post-permission authorization filter used as the governance boundary. This is
 the canonical WordPress application-capability layer.
 
+October development-branch commits add `core/content-query`, `core/users-query`,
+and `core/settings-get` for WordPress 7.2. They are implemented upstream
+development work, not proof of availability in the pinned WordPress 7.1 stack.
+Newly registered or public Abilities do not automatically enter AWG's governed
+allowlist; application permission and explicit MCP exposure remain necessary.
+
 ### Official WordPress MCP Adapter [A]
 
 - [WordPress MCP Adapter repository](https://github.com/WordPress/mcp-adapter)
 - [MCP Adapter 0.7.0 release](https://github.com/WordPress/mcp-adapter/releases/tag/v0.7.0)
+- [MCP Adapter 0.7.1 release](https://github.com/WordPress/mcp-adapter/releases/tag/v0.7.1)
+- [MCP Adapter session-storage fix](https://github.com/WordPress/mcp-adapter/pull/386)
+- [MCP Adapter unavailable-Ability handling](https://github.com/WordPress/mcp-adapter/pull/385)
 - [MCP Adapter 0.7.0 migration guide](https://github.com/WordPress/mcp-adapter/blob/trunk/docs/migration/v0.7.0.md)
 - [Default MCP server guide](https://github.com/WordPress/mcp-adapter/blob/trunk/docs/guides/default-server.md)
 - [Creating Abilities for MCP](https://github.com/WordPress/mcp-adapter/blob/trunk/docs/guides/creating-abilities.md)
@@ -57,6 +69,16 @@ completed with `ACCEPTED` against 0.7.0 using exact MCP `2026-07-28`, including
 sessionless discovery, authenticated execution, application-permission denial,
 rate limiting, and minimized evidence. The earlier deployed HTTPS result
 remains separate historical evidence against 0.6.1.
+
+Released 0.7.1 caps stored initialization parameters at 4 KiB per session,
+rejects oversized initialization, recovers oversized old session rows, and
+omits client icons from session storage. Non-exposed and missing Abilities now
+share `ability_not_found`. On 2026-10-18, the isolated E2E completed with
+`ACCEPTED` against 0.7.1, including oversized-initialization rejection without
+session writes and non-exposed-Ability refusal without metadata disclosure.
+These bounded upstream stores support availability and privacy; they do not
+replace AWG evidence, budgets, or application authorization. Historical HTTPS
+acceptance does not establish that a deployed installation has been patched.
 
 ### Automattic Agents API [B]
 
@@ -121,7 +143,7 @@ that follows from a loaded skill.
 
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-09 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-16 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
@@ -150,11 +172,15 @@ that follows from a loaded skill.
 - [Pull request 333: proposed page-enforced write boundaries](https://github.com/webmachinelearning/webmcp/pull/333)
 - [Pull request 338: declarative API removed from the specification](https://github.com/webmachinelearning/webmcp/pull/338)
 - [Pull request 339: platform execution errors mapped to DOMException types](https://github.com/webmachinelearning/webmcp/pull/339)
+- [Pull request 337: concurrency and detached-document algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/337)
+- [Pull request 345: inactive-document unregistration and registration checks](https://github.com/webmachinelearning/webmcp/pull/345)
+- [Pull request 347: duplicate-name recheck after schema serialization](https://github.com/webmachinelearning/webmcp/pull/347)
+- [Pull request 348: proposed UUID-backed Tool interface](https://github.com/webmachinelearning/webmcp/pull/348)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-10-09 draft defines an imperative browser API
+Verified project use: the 2026-10-16 draft defines an imperative browser API
 for exposing tools to user agents and agents, includes `consequentialHint`, and
 records the provider document's origin in observed tool collections. The
 annotation is a classification hint, not permission or approval. Origin is
@@ -237,6 +263,17 @@ precondition; this broadens API availability but grants no application
 authority. Pull request 333 is an open specification proposal based on issue
 298's page-enforced write boundaries, and issue 312 remains an open proposal for
 page-context synchronization. Neither is an adopted authority primitive.
+
+Merged pull requests 337, 345, and 347 correct detached-document handling,
+registration rechecks, and duplicate-name races during schema serialization.
+AWG leaves these platform checks to the host and propagates registration
+rejection without creating a bypass registry. Chrome's October 16 imperative
+guide also records `debugging` as available from Chrome 156; browser-specific
+availability does not make the hint an authorization control. Pull request 348
+remains open: its UUID-backed `Tool` interface would change discovery handles
+and cloning/serialization assumptions. It is an implementation-review candidate
+if adopted, not the current `RegisteredTool` contract or a reason to migrate
+the reference adapter now.
 
 ### A2A Protocol [B]
 
@@ -342,3 +379,20 @@ Before a release, review:
 - relevant prompt-injection and agent-security research.
 
 Any source-dependent normative statement should retain a version or review date.
+
+### Review window: 2026-10-12 to 2026-10-18
+
+- WordPress MCP Adapter 0.7.1: released security update; local E2E accepted.
+- WordPress Core query/settings Abilities: merged development work for 7.2;
+  retain the 7.1 reference baseline and explicit capability scope.
+- WebMCP: October 16 draft and Chrome imperative guide reviewed; adopted
+  algorithm fixes recorded; PR 348 remains an open compatibility candidate.
+- Agents API: latest release remains 0.16.1. MCP keeps the 2026-07-28 baseline;
+  upstream working-group and link edits did not require an AWG contract change.
+- A2A: canonical Agent Card example correction reviewed; no AWG adapter exists
+  and no new protocol dependency is introduced.
+- Japan profile: AISI still lists evaluation guide 1.20; official indexed METI
+  material still identifies Business Guidelines 1.2 and the 2025 contract
+  checklist. Direct METI landing-page retrieval returned HTTP 403, so this
+  review does not claim full page-content verification. PPC guidance and the
+  AgentDojo/WASP source revisions did not justify a control change.

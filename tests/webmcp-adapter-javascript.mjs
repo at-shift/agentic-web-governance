@@ -70,6 +70,61 @@ await assert.rejects(
 );
 passed += 1;
 
+// Registration failures belong to the real host. The adapter must propagate
+// them, never fall back to a parallel registry that bypasses the browser gate.
+for (const name of ["InvalidStateError", "NotAllowedError"]) {
+  const documentObject = fakeDocument();
+  const kernel = kernelWith({});
+  const failure = new DOMException("Host rejected registration", name);
+  documentObject.modelContext.registerTool = async () => {
+    throw failure;
+  };
+  await assert.rejects(
+    () => register(documentObject, kernel),
+    (error) => error === failure,
+  );
+  assert.equal(documentObject.registrations.size, 0);
+  assert.deepEqual(kernel.calls.proposed, []);
+  assert.deepEqual(kernel.calls.executed, []);
+  passed += 1;
+}
+
+{
+  const documentObject = fakeDocument();
+  const controller = new AbortController();
+  let startProposal;
+  let finishProposal;
+  const proposing = new Promise((resolve) => {
+    startProposal = resolve;
+  });
+  const resumeProposal = new Promise((resolve) => {
+    finishProposal = resolve;
+  });
+  let executionCount = 0;
+  const kernel = {
+    async propose() {
+      startProposal();
+      await resumeProposal;
+      return { status: "ready", proposal_id: "cancelled-before-dispatch" };
+    },
+    async execute() {
+      executionCount += 1;
+    },
+  };
+  await register(documentObject, kernel);
+  const invocation = documentObject.registrations
+    .get("reference_tool")
+    .execute({}, { signal: controller.signal });
+  await proposing;
+  controller.abort(
+    new DOMException("Cancelled during policy evaluation", "AbortError"),
+  );
+  finishProposal();
+  await assert.rejects(invocation, (error) => error.name === "AbortError");
+  assert.equal(executionCount, 0);
+}
+passed += 1;
+
 {
   const documentObject = fakeDocument();
   const kernel = kernelWith({

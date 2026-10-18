@@ -1,12 +1,19 @@
 # WebMCP Reference Adapter
 
 **Status:** Experimental, read-only reference implementation  
-**Upstream:** WebMCP Draft Community Group Report, 9 October 2026  
+**Upstream:** WebMCP Draft Community Group Report, 16 October 2026  
 **API:** Imperative `document.modelContext.registerTool()`
 
 This directory demonstrates a narrow WebMCP protocol adapter around the AWG
 governance kernel. It is not a browser polyfill and does not claim that every
 browser implements WebMCP.
+
+The October 18 review retains the current `RegisteredTool` contract. Upstream
+PR 348's UUID-backed `Tool` interface is still a proposal. The host owns
+detached-document, duplicate-registration, and Permissions Policy checks;
+the adapter propagates registration errors. Contract tests cover that behavior
+and cancellation during proposal evaluation, without claiming native-browser
+interoperability or reimplementing host algorithms.
 
 The adapter deliberately:
 

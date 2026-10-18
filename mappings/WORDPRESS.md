@@ -134,15 +134,16 @@ registration-time callback wrapper and a second security-sensitive execution
 path. Compatibility can be reconsidered as a separate adapter if demonstrated
 deployment demand outweighs that cost.
 
-The tested official MCP Adapter 0.6.1 and 0.7.0 paths delegate Ability-backed
-tools to `WP_Ability::check_permissions()` and `WP_Ability::execute()`. The same
+The tested official MCP Adapter 0.6.1, 0.7.0, and 0.7.1 paths delegate
+Ability-backed tools to `WP_Ability::check_permissions()` and
+`WP_Ability::execute()`. The same
 governance boundary therefore covers its permission probe and execution
 without an MCP-specific fork. Because that adapter performs both calls, an
 allow may be memoized within one PHP request and cleared at
 `wp_before_execute_ability` so a single external invocation does not reserve
 its rate budget twice.
 
-The current official MCP Adapter 0.7.0 adds exact MCP `2026-07-28` support,
+Official MCP Adapter 0.7.0 added exact MCP `2026-07-28` support,
 sessionless discovery, per-request protocol metadata, and elicitation for direct
 callable tools. It removes legacy generated validators and the associated
 validation filter, requires custom transports to use its current request or
@@ -151,6 +152,13 @@ of the canonical plugin. The reference plugin uses neither the removed
 internals nor a custom transport, so no implementation fork is added here. The
 0.7.0 sessionless acceptance run confirms that this boundary remains effective
 under exact MCP `2026-07-28` projection.
+
+Version 0.7.1 is the current tested reference baseline. It bounds stored
+initialization parameters to 4 KiB per session and returns `ability_not_found`
+for both missing and non-exposed Abilities. Treat that error as a safe refusal,
+not permission to bypass discovery or probe a private capability. The Adapter's
+storage limit protects its transport state; AWG must still bound and minimize
+its own evidence and workflow stores.
 
 ## 5. Ability metadata
 
@@ -295,6 +303,12 @@ encoding for empty tool arguments and rejects anonymous discovery before the
 target Ability boundary. The Stage 1 exit condition is therefore satisfied for
 this reference path; this does not claim production readiness or full
 specification conformance.
+
+On 2026-10-18, the isolated E2E completed with `ACCEPTED` against MCP Adapter
+0.7.1. Besides the same sessionless execution path, the test verifies oversized
+session initialization causes no storage write and a non-exposed fixture
+Ability remains undiscoverable and uncallable. This local result does not
+change the historical deployed HTTPS 0.6.1 evidence or prove deployed patching.
 
 ### Stage 2: Scoped write delegation
 

@@ -35,7 +35,7 @@ assert_true(
 	'Reference plugin is inactive.'
 );
 $mcp_data = get_plugin_data( WP_PLUGIN_DIR . '/mcp-adapter/mcp-adapter.php', false, false );
-assert_same( '0.7.0', $mcp_data['Version'] ?? null, 'MCP Adapter version' );
+assert_same( '0.7.1', $mcp_data['Version'] ?? null, 'MCP Adapter version' );
 pass( 'Pinned WordPress and MCP Adapter versions are active' );
 
 $debug_log = WP_CONTENT_DIR . '/debug.log';
@@ -62,6 +62,38 @@ pass( 'Unauthenticated sessionless MCP discovery is rejected' );
 $admin_auth = array( $credentials['admin_username'], $credentials['admin_app_password'] );
 $blocked_auth = array( $credentials['blocked_username'], $credentials['blocked_app_password'] );
 
+// The current Adapter still serves the session-based revision used by the
+// deployed-site verifier. Exercise its storage limit without widening AWG's
+// application-version baseline or persisting an oversized session.
+$admin_user_id = (int) $credentials['admin_user_id'];
+wp_cache_delete( $admin_user_id, 'user_meta' );
+$sessions_before = get_user_meta( $admin_user_id, 'mcp_adapter_sessions', true );
+$oversized = request(
+	$admin_auth,
+	array(
+		'jsonrpc' => '2.0',
+		'id'      => 5,
+		'method'  => 'initialize',
+		'params'  => array(
+			'protocolVersion' => '2025-11-25',
+			'capabilities'    => array(
+				'experimental' => array(
+					'awg-storage-limit-test' => array( 'padding' => str_repeat( 'x', 8192 ) ),
+				),
+			),
+			'clientInfo'      => array( 'name' => 'awg-storage-limit-test', 'version' => '0.1.0' ),
+		),
+	),
+	'2025-11-25'
+);
+assert_same( 200, $oversized['status'], 'Oversized initialization HTTP status' );
+assert_same( -32602, $oversized['json']['error']['code'] ?? null, 'Oversized initialization error' );
+assert_contains( '4096', $oversized['json']['error']['message'] ?? '', 'Initialization was not rejected by the session-storage limit.' );
+assert_true( empty( $oversized['headers']['mcp-session-id'] ), 'Oversized initialization created a session.' );
+wp_cache_delete( $admin_user_id, 'user_meta' );
+assert_same( $sessions_before, get_user_meta( $admin_user_id, 'mcp_adapter_sessions', true ), 'Session storage after rejected initialization' );
+pass( 'Oversized initialization is rejected without creating or changing session storage' );
+
 $tools = mcp_call( $admin_auth, 11, 'tools/list' );
 assert_true( empty( $tools['headers']['mcp-session-id'] ), 'Sessionless discovery created a session.' );
 $tool_names = array_column( $tools['result']['tools'] ?? array(), 'name' );
@@ -84,6 +116,35 @@ assert_true(
 	'Reference Ability was not discoverable over MCP.'
 );
 pass( 'The MCP-only reference Ability is discoverable' );
+assert_true( wp_has_ability( 'agentic-web-governance/e2e-hidden' ), 'Hidden Ability fixture was not registered.' );
+assert_false(
+	in_array( 'agentic-web-governance/e2e-hidden', array_column( $abilities, 'name' ), true ),
+	'Hidden Ability appeared in MCP discovery.'
+);
+
+// A private Ability must be indistinguishable from a missing one. Do not turn
+// the Adapter's discovery suggestions into an application inventory leak.
+$missing = call_tool( $admin_auth, 13, 'mcp-adapter-execute-ability', array(
+	'ability_name' => 'agentic-web-governance/does-not-exist',
+	'parameters'   => new stdClass(),
+) );
+$hidden = call_tool( $admin_auth, 14, 'mcp-adapter-execute-ability', array(
+	'ability_name' => 'agentic-web-governance/e2e-hidden',
+	'parameters'   => new stdClass(),
+) );
+assert_true( true === ( $missing['result']['isError'] ?? false ), 'Missing Ability did not return a tool error.' );
+assert_true( true === ( $hidden['result']['isError'] ?? false ), 'Hidden Ability was externally callable.' );
+// The MCP wrapper may project WP_Error into text, so inspect the application
+// error code at its authoritative boundary rather than invent a wire field.
+wp_set_current_user( $admin_user_id );
+foreach ( array( 'agentic-web-governance/does-not-exist', 'agentic-web-governance/e2e-hidden' ) as $ability_name ) {
+	$permission = \WP\MCP\Abilities\ExecuteAbilityAbility::check_permission( array( 'ability_name' => $ability_name ) );
+	assert_true( is_wp_error( $permission ), 'Missing or hidden Ability did not return WP_Error.' );
+	assert_same( 'ability_not_found', $permission->get_error_code(), 'Unavailable Ability error code' );
+}
+wp_set_current_user( 0 );
+assert_false( str_contains( json_encode( $hidden['result'] ), 'awg-private-fixture-marker' ), 'Hidden Ability metadata was disclosed.' );
+pass( 'Unknown and non-exposed Abilities share the safe not-found error' );
 
 reset_governance_state( (int) $credentials['admin_user_id'] );
 
@@ -212,7 +273,7 @@ function execute_reference_ability( array $auth, int $id ): array {
 	);
 }
 
-function request( ?array $auth, array $payload ): array {
+function request( ?array $auth, array $payload, string $protocol = AWG_E2E_PROTOCOL ): array {
 	$method = $payload['method'] ?? null;
 	if ( ! is_string( $method ) ) {
 		fail( 'MCP request method is missing.' );
@@ -221,20 +282,22 @@ function request( ?array $auth, array $payload ): array {
 	// MCP 2026-07-28 is sessionless. Each request carries the exact revision and
 	// client context, so this verifier cannot accidentally pass by reusing a
 	// legacy 2025 session negotiated by an initialize request.
-	$params['_meta'] = array(
-		'io.modelcontextprotocol/protocolVersion'    => AWG_E2E_PROTOCOL,
-		'io.modelcontextprotocol/clientCapabilities' => new stdClass(),
-		'io.modelcontextprotocol/clientInfo'         => array(
-			'name'    => 'agentic-web-governance-e2e',
-			'version' => '0.1.0',
-		),
-	);
+	if ( AWG_E2E_PROTOCOL === $protocol ) {
+		$params['_meta'] = array(
+			'io.modelcontextprotocol/protocolVersion'    => AWG_E2E_PROTOCOL,
+			'io.modelcontextprotocol/clientCapabilities' => new stdClass(),
+			'io.modelcontextprotocol/clientInfo'         => array(
+				'name'    => 'agentic-web-governance-e2e',
+				'version' => '0.1.0',
+			),
+		);
+	}
 	$payload['params'] = $params;
 
 	$headers = array(
 		'Accept: application/json, text/event-stream',
 		'Content-Type: application/json',
-		'MCP-Protocol-Version: ' . AWG_E2E_PROTOCOL,
+		'MCP-Protocol-Version: ' . $protocol,
 		'Mcp-Method: ' . $method,
 	);
 	if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {

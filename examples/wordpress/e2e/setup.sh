@@ -6,13 +6,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORDPRESS_DIR="${SCRIPT_DIR}/runtime/wordpress"
 DOWNLOAD_DIR="${SCRIPT_DIR}/runtime/downloads"
 WORDPRESS_ARCHIVE="${DOWNLOAD_DIR}/wordpress-7.1.tar.gz"
-MCP_VERSION="0.7.0"
+MCP_VERSION="0.7.1"
 MCP_ARCHIVE="${DOWNLOAD_DIR}/mcp-adapter-${MCP_VERSION}.zip"
 
 WORDPRESS_URL="https://wordpress.org/wordpress-7.1.tar.gz"
 WORDPRESS_SHA256="05a5f89138f632b7329f1202f2a0553c5f7fe4daf8e4b9ca7ebae9b9466b9e86"
 MCP_URL="https://github.com/WordPress/mcp-adapter/releases/download/v${MCP_VERSION}/mcp-adapter.zip"
-MCP_SHA256="9168c18dbd018428ff14ee28e7018aa0399d4b8819b7c98b406f6610731c3a79"
+MCP_SHA256="c8bc28f83d3c39beffa2add4f6becc0b1ae54097df433697d1dbe6520a80d769"
 PHP_BIN="${AWG_E2E_PHP:-php}"
 
 if ! PHP_BIN="$(command -v "${PHP_BIN}")"; then

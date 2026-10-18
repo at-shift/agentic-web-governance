@@ -8,7 +8,7 @@ implementations rather than test doubles.
 ## Pinned stack
 
 - WordPress 7.1
-- Official WordPress MCP Adapter 0.7.0
+- Official WordPress MCP Adapter 0.7.1
 - MCP protocol `2026-07-28` sessionless HTTP requests
 - PHP 8.3+
 - MySQL 8.4+
@@ -27,7 +27,7 @@ installation. The web server listens on `127.0.0.1:8081`.
 
 `verify.php` passes only when all of these statements are true:
 
-1. The running application is exactly WordPress 7.1 with MCP Adapter 0.7.0.
+1. The running application is exactly WordPress 7.1 with MCP Adapter 0.7.1.
 2. An unauthenticated sessionless MCP discovery request is rejected.
 3. An authenticated client can list the default tools without creating a
    legacy MCP session.
@@ -43,6 +43,12 @@ installation. The web server listens on `127.0.0.1:8081`.
 9. Evidence is bounded and contains no raw Ability input or output fields.
 10. The accepted flow emits no PHP warning, notice, deprecation, parse error, or
     fatal error.
+11. An oversized `2025-11-25` initialization request returns JSON-RPC `-32602`,
+    creates no session header, and leaves session storage unchanged. This
+    checks the current Adapter's storage fix, not support for old AWG stacks.
+12. A test-only non-exposed Ability is registered but absent from discovery;
+    it and an unknown Ability are refused with `ability_not_found` at the
+    application boundary, and no private fixture metadata reaches the caller.
 
 The test-only must-use plugin lowers the MCP Adapter's transport and execute
 wrapper baselines from `read` to the `exist` pseudo-capability only after
