@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-10-16 Draft Community Group Report, repository reviewed 2026-10-18  
-**Last reviewed:** 2026-10-18
+**Upstream snapshot:** 2026-10-20 Draft Community Group Report, repository reviewed 2026-10-25  
+**Last reviewed:** 2026-10-25
 
 ## 1. Purpose
 
@@ -66,6 +66,13 @@ not authoritative declarations of application permission, risk, approval, or
 human presence. A WebMCP implementation may use them to inform presentation or
 routing, but governance must derive the effective decision from application
 authority and policy.
+
+Merged PR 334 adds agent-level security guidance in the October 20 draft:
+general browser-agent risks exceed what one API can enforce, and site-authored
+descriptions or hints cannot be the sole security basis. This supports the
+existing boundaries here, not a new browser guarantee. The linked Chrome
+guides offer defense-in-depth advice; their suggested character budgets are
+not adopted WebMCP limits or new AWG requirements.
 
 ## 3. Actors and authority
 
@@ -268,6 +275,15 @@ information its host exposes, distinguish known refusal from known partial or
 completed effects internally, and keep an unresolved outcome explicitly
 uncertain. It MUST NOT infer retry safety from an exception after dispatch.
 
+Open issue 361 reports draft/Chrome/WPT differences in callback-result
+serialization, including string quoting and `undefined` handling. This is an
+author-reported observation, not adopted API behavior or verification by AWG.
+The reference callback returns an application object; no caller-side result
+decoder or compatibility coercion is added. Native-browser result delivery,
+including serialization failure after dispatch, is an implementation and
+compatibility validation candidate. Contract tests alone do not establish
+browser interoperability or terminal side-effect status.
+
 The current specification has no declarative tool lifecycle. If a host-specific
 or future declarative flow populates fields and then waits for later submission,
 that waiting is nonterminal and MUST NOT be mapped to `SUCCEEDED`, execution
@@ -306,7 +322,7 @@ document unloading still apply. This mapping keeps registration and execution
 lifetime separate and requires outcome reconciliation before consequential
 retries.
 
-The 2026-10-16 draft's observed tool collection carries the provider document's
+The reviewed draft's observed tool collection carries the provider document's
 origin. This mapping adopts origin as provenance while remaining independent of
 the implementation-defined format used to expose observations to an agent.
 The same draft adds activation and cancellation event interfaces, a `debugging`
@@ -345,7 +361,7 @@ awaits the host's registration promise and propagates rejection; it does not
 emulate platform registration or treat discovery as an authority grant.
 
 PR 348 proposes replacing `RegisteredTool` dictionaries with a UUID-backed
-`Tool` interface. It remains open on 2026-10-18. If adopted, review tool-handle
+`Tool` interface. It remains open on 2026-10-25. If adopted, review tool-handle
 identity, nullable schema/annotation fields, and the proposed restrictions on
 spreading, JSON serialization, and structured cloning. No such migration is
 required or claimed by the current adapter.
@@ -414,6 +430,10 @@ A WebMCP adapter should test at least:
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- [Chrome agent security considerations](https://developer.chrome.com/docs/agents/security)
+- [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
+- [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
+- [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
 - [Pull request 279: clarified `executeTool()` and schema value shapes](https://github.com/webmachinelearning/webmcp/pull/279)
 - [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)

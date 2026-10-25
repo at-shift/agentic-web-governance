@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-10-05
+**Last reviewed:** 2026-10-25
 
 ## 1. Purpose
 
@@ -62,6 +62,13 @@ runtime state, not AWG `APPROVAL_PENDING` and not evidence of a human decision.
 Cancellation fencing and durable results reduce ambiguity but do not by
 themselves prove that no external effect occurred or that authoritative
 application state now matches the requested outcome.
+
+Merged but unreleased Agents API PRs 588 and 589 add schedule-record caching,
+duplicate-chain collapse, periodic reconciliation, and atomic lock takeover.
+Custom routine backends must implement the new `repair()` method. Review that
+contract and recovery/concurrency tests before any future integration; AWG has
+no such backend today and does not claim compatibility with these unreleased
+changes. Keep published 0.16.1 distinct from upstream development work.
 
 ## 3. Core mapping
 
@@ -159,6 +166,31 @@ for both missing and non-exposed Abilities. Treat that error as a safe refusal,
 not permission to bypass discovery or probe a private capability. The Adapter's
 storage limit protects its transport state; AWG must still bound and minimize
 its own evidence and workflow stores.
+
+### 4.2 WordPress 7.2 validation candidate
+
+Merged development commit `1881d63d19` adds `required_capabilities` to Abilities.
+Those checks precede an optional `permission_callback`; the final
+`wp_ability_permission_result` filter receives `false` when a capability is
+missing. The new `has_required_capabilities` discovery filter does not run
+permission callbacks or prove execution authority. These are 7.2 development
+contracts, not features or acceptance results of the pinned 7.1 stack.
+
+Before advancing the reference baseline, verify against actual WordPress 7.2:
+
+- missing required capability stays denied through direct Ability, REST, and
+  official MCP paths, without invoking the execution callback;
+- capability-only and combined capability/callback registration still reach
+  the governance gate on allow, and governance preserves every native denial;
+- discovery inclusion cannot bypass input-dependent permission or governance;
+- revoking capability between proposal and dispatch prevents execution;
+- if adding `core/content-query` to scope, use the changed author-object filter
+  and verify author metadata visibility with distinct user principals.
+
+The author-filter contract changed in `e29e51dac6`; `38a613a3f9` narrows author
+metadata disclosure. Neither change automatically expands AWG's allowlist.
+These are implementation and compatibility candidates, not reasons to emulate
+7.2 in the reference plugin or claim a new E2E `ACCEPTED` result now.
 
 ## 5. Ability metadata
 

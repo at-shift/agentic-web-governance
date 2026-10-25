@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-10-18
+**Last reviewed:** 2026-10-25
 
 ## 1. Evidence levels
 
@@ -29,6 +29,9 @@ An evidence level is not a security rating or endorsement.
 - [WordPress Core: content-query development commit](https://github.com/WordPress/wordpress-develop/commit/213ecca2)
 - [WordPress Core: users-query development commit](https://github.com/WordPress/wordpress-develop/commit/39981fd0)
 - [WordPress Core: settings-get development commit](https://github.com/WordPress/wordpress-develop/commit/b6512b1e)
+- [WordPress Core: required capabilities for Abilities](https://github.com/WordPress/wordpress-develop/commit/1881d63d19)
+- [WordPress Core: content-query author filter contract](https://github.com/WordPress/wordpress-develop/commit/e29e51dac6)
+- [WordPress Core: content-query author visibility](https://github.com/WordPress/wordpress-develop/commit/38a613a3f9)
 
 Verified project use: WordPress provides a central registry for machine-readable
 capabilities with JSON Schema, execution callbacks, and permission callbacks.
@@ -41,6 +44,15 @@ and `core/settings-get` for WordPress 7.2. They are implemented upstream
 development work, not proof of availability in the pinned WordPress 7.1 stack.
 Newly registered or public Abilities do not automatically enter AWG's governed
 allowlist; application permission and explicit MCP exposure remain necessary.
+
+Further merged 7.2 development work adds `required_capabilities`, checked before
+an optional permission callback, and capability-based discovery filtering that
+does not run permission callbacks or grant execution. The final permission
+filter still receives a missing-capability denial. Other changes replace the
+content-query author-slug filter with an author object and restrict author
+metadata visibility. These are implementation and compatibility review
+candidates for a future 7.2 baseline, not tested features of the pinned 7.1
+reference stack. See the [WordPress validation checklist](mappings/WORDPRESS.md#42-wordpress-72-validation-candidate).
 
 ### Official WordPress MCP Adapter [A]
 
@@ -90,6 +102,8 @@ acceptance does not establish that a deployed installation has been patched.
 - [Agents API 0.15.0 release](https://github.com/Automattic/agents-api/releases/tag/v0.15.0)
 - [Agents API 0.16.0 release](https://github.com/Automattic/agents-api/releases/tag/v0.16.0)
 - [Agents API 0.16.1 release](https://github.com/Automattic/agents-api/releases/tag/v0.16.1)
+- [Agents API: routine scheduling and backend repair contract](https://github.com/Automattic/agents-api/pull/588)
+- [Agents API: periodic reconciliation and atomic lock takeover](https://github.com/Automattic/agents-api/pull/589)
 
 Verified project use: the package defines generic agent, execution-principal,
 access-grant, policy, pending-action, memory, workflow, and external-client
@@ -109,6 +123,14 @@ idempotency, outcome reconciliation, approval, or evidence requirements. In
 particular, a suspended or awaiting workflow is nonterminal and does not
 establish human approval. Adoption should be feature-detected and adapter-based
 while the project evolves.
+
+Merged, unreleased PRs 588 and 589 add persisted schedule records,
+duplicate-chain collapse, periodic WP-Cron reconciliation, and shared atomic
+lock takeover. PR 588 also requires `repair()` on custom routine backends, a
+contract break despite the fixes' operational focus. This is a future
+integration-review candidate; the latest published release remains 0.16.1.
+AWG has no Agents API routine backend to migrate, and scheduling repair cannot
+replace authorization, side-effect idempotency, or outcome reconciliation.
 
 ### WordPress Agent User proposal [B]
 
@@ -143,10 +165,14 @@ that follows from a loaded skill.
 
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-16 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-20 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
+- [Chrome agent security considerations](https://developer.chrome.com/docs/agents/security)
+- [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
+- [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
+- [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
 - [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
 - [Pull request 279: clarified `executeTool()` and schema value shapes](https://github.com/webmachinelearning/webmcp/pull/279)
@@ -180,7 +206,7 @@ that follows from a loaded skill.
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-10-16 draft defines an imperative browser API
+Verified project use: the 2026-10-20 draft defines an imperative browser API
 for exposing tools to user agents and agents, includes `consequentialHint`, and
 records the provider document's origin in observed tool collections. The
 annotation is a classification hint, not permission or approval. Origin is
@@ -274,6 +300,21 @@ remains open: its UUID-backed `Tool` interface would change discovery handles
 and cloning/serialization assumptions. It is an implementation-review candidate
 if adopted, not the current `RegisteredTool` contract or a reason to migrate
 the reference adapter now.
+
+Merged PR 334 separates general browser-agent risks from controls a WebMCP API
+can enforce and links agent/tool security guidance. Site-authored descriptions
+and hints are insufficient security evidence. This reinforces AWG's existing
+application authority and independent human-authorization boundaries; it adds
+no new API or portable approval mechanism. Chrome's linked guidance is
+implementation advice, not additional AWG protocol requirements.
+
+Open issue 361 reports differing result serialization between the draft,
+Chrome, and WPT, notably for strings and `undefined`. This is an
+author-reported interoperability observation, not an adopted change or an AWG
+native-browser test result. The reference callback returns an application
+object and has no `executeTool()` result decoder. Native result-delivery tests
+remain a compatibility candidate; do not add speculative coercion or infer
+safe replay from a result-serialization error.
 
 ### A2A Protocol [B]
 
@@ -396,3 +437,28 @@ Any source-dependent normative statement should retain a version or review date.
   checklist. Direct METI landing-page retrieval returned HTTP 403, so this
   review does not claim full page-content verification. PPC guidance and the
   AgentDojo/WASP source revisions did not justify a control change.
+
+### Review window: 2026-10-18 to 2026-10-25
+
+- WebMCP: October 20 draft incorporates PR 334's agent-level security guidance;
+  no new registration or execution API. Chrome's imperative guide remains
+  dated October 16. PR 348 and the page-enforced-write PR 333 remain open.
+- Implementation and compatibility candidates: WordPress 7.2 development
+  `required_capabilities`, discovery filtering, and content-query privacy/API
+  changes; WebMCP issue 361's author-reported result-serialization divergence;
+  Agents API's merged but unreleased routine backend `repair()` contract and
+  scheduling fixes. No untested baseline upgrade or absent adapter is added.
+- Official MCP Adapter and Agents API releases remain 0.7.1 and 0.16.1.
+  Adapter changes this week concern development tooling and documentation.
+  WordPress Agent User remains an open proposal.
+- MCP changes concern working-group organization and maintainer metadata;
+  A2A changes concern steering-committee membership. No protocol dependency or
+  runtime change is required by either for this reference stack.
+- Japan profile and cited research: no confirmed revision requiring a mapping
+  change. AISI still lists evaluation guide 1.20; PPC and cited arXiv revision
+  histories were checked. Direct METI landing pages again returned HTTP 403;
+  indexed official material still identifies Business Guidelines 1.2 and the
+  2025 contract checklist. METI content verification remains partial.
+- Scope: evidence and mapping updates only; retain WordPress 7.1, MCP Adapter
+  0.7.1, existing WebMCP reference behavior, and the draft.4 release. No new
+  native-browser or WordPress 7.2 acceptance is claimed.
