@@ -70,6 +70,27 @@ await assert.rejects(
 );
 passed += 1;
 
+{
+  const documentObject = fakeDocument();
+  const kernel = kernelWith({});
+  const hostRegister = documentObject.modelContext.registerTool;
+  let registrationOptions;
+  documentObject.modelContext.registerTool = async (tool, options) => {
+    registrationOptions = options;
+    return hostRegister(tool, options);
+  };
+  // PR 326 documents host opt-in, not application authority. This reference
+  // stays same-origin even if an unsupported exposure option is supplied.
+  await register(documentObject, kernel, {
+    exposedTo: ["https://attacker.test"],
+  });
+  assert.deepEqual(Object.keys(registrationOptions), ["signal"]);
+  assert.equal(Object.hasOwn(registrationOptions, "exposedTo"), false);
+  assert.deepEqual(kernel.calls.proposed, []);
+  assert.deepEqual(kernel.calls.executed, []);
+}
+passed += 1;
+
 // Registration failures belong to the real host. The adapter must propagate
 // them, never fall back to a parallel registry that bypasses the browser gate.
 for (const name of ["InvalidStateError", "NotAllowedError"]) {

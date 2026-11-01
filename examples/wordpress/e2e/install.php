@@ -49,8 +49,8 @@ require_once ABSPATH . 'wp-admin/includes/plugin.php';
 require_once ABSPATH . 'wp-admin/includes/user.php';
 
 global $wp_version;
-if ( '7.1' !== $wp_version ) {
-	fail( 'Expected WordPress 7.1, found ' . (string) $wp_version . '.' );
+if ( '7.1.4' !== $wp_version ) {
+	fail( 'Expected WordPress 7.1.4, found ' . (string) $wp_version . '.' );
 }
 
 if ( ! is_blog_installed() ) {
@@ -109,7 +109,7 @@ if ( false === file_put_contents(
 }
 
 chmod( $credentials_file, 0600 );
-echo "WordPress 7.1 database, plugins, and E2E principals are ready.\n";
+echo "WordPress 7.1.4 database, plugins, and E2E principals are ready.\n";
 
 function read_credentials( string $path ): array {
 	if ( ! is_file( $path ) ) {

@@ -5,12 +5,13 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORDPRESS_DIR="${SCRIPT_DIR}/runtime/wordpress"
 DOWNLOAD_DIR="${SCRIPT_DIR}/runtime/downloads"
-WORDPRESS_ARCHIVE="${DOWNLOAD_DIR}/wordpress-7.1.tar.gz"
+WORDPRESS_VERSION="7.1.4"
+WORDPRESS_ARCHIVE="${DOWNLOAD_DIR}/wordpress-${WORDPRESS_VERSION}.tar.gz"
 MCP_VERSION="0.7.1"
 MCP_ARCHIVE="${DOWNLOAD_DIR}/mcp-adapter-${MCP_VERSION}.zip"
 
-WORDPRESS_URL="https://wordpress.org/wordpress-7.1.tar.gz"
-WORDPRESS_SHA256="05a5f89138f632b7329f1202f2a0553c5f7fe4daf8e4b9ca7ebae9b9466b9e86"
+WORDPRESS_URL="https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz"
+WORDPRESS_SHA256="881e53a4681ff2cd911651b11cccdede5ae477ddf0765af5d6a1a8b219a1d835"
 MCP_URL="https://github.com/WordPress/mcp-adapter/releases/download/v${MCP_VERSION}/mcp-adapter.zip"
 MCP_SHA256="c8bc28f83d3c39beffa2add4f6becc0b1ae54097df433697d1dbe6520a80d769"
 PHP_BIN="${AWG_E2E_PHP:-php}"
@@ -73,12 +74,21 @@ verify_sha256 "${WORDPRESS_ARCHIVE}" "${WORDPRESS_SHA256}"
 verify_sha256 "${MCP_ARCHIVE}" "${MCP_SHA256}"
 
 if [[ ! -f "${WORDPRESS_DIR}/wp-includes/version.php" ]]; then
-	echo "Extracting WordPress 7.1"
+	echo "Extracting WordPress ${WORDPRESS_VERSION}"
 	rm -rf "${SCRIPT_DIR}/runtime/wordpress-extract"
 	mkdir -p "${SCRIPT_DIR}/runtime/wordpress-extract"
 	tar -xzf "${WORDPRESS_ARCHIVE}" -C "${SCRIPT_DIR}/runtime/wordpress-extract"
 	mv "${SCRIPT_DIR}/runtime/wordpress-extract/wordpress" "${WORDPRESS_DIR}"
 	rmdir "${SCRIPT_DIR}/runtime/wordpress-extract"
+fi
+
+# Never accept a cached older core as evidence for the pinned security release.
+# Refuse instead of overwriting an existing runtime; it can be backed up first.
+installed_version="$("${PHP_BIN}" -r 'require $argv[1]; echo $wp_version;' "${WORDPRESS_DIR}/wp-includes/version.php")"
+if [[ "${installed_version}" != "${WORDPRESS_VERSION}" ]]; then
+	echo "Expected WordPress ${WORDPRESS_VERSION}, found cached ${installed_version}." >&2
+	echo "Stop the E2E server, move runtime/wordpress aside, and rerun setup." >&2
+	exit 1
 fi
 
 MCP_PLUGIN_FILE="${WORDPRESS_DIR}/wp-content/plugins/mcp-adapter/mcp-adapter.php"

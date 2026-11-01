@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-10-25
+**Last reviewed:** 2026-11-01
 
 ## 1. Evidence levels
 
@@ -20,6 +20,7 @@ An evidence level is not a security rating or endorsement.
 ### WordPress Abilities API [A]
 
 - [Abilities API handbook](https://developer.wordpress.org/apis/abilities-api/)
+- [WordPress 7.1.4 security release](https://wordpress.org/news/2026/10/wordpress-7-1-4/)
 - [Abilities API hooks](https://developer.wordpress.org/apis/abilities-api/hooks/)
 - [WordPress 7.1 execution lifecycle filters](https://make.wordpress.org/core/2026/07/29/new-execution-lifecycle-filters-for-the-abilities-api-in-wordpress-7-1/)
 - [`WP_Ability::execute()` reference](https://developer.wordpress.org/reference/classes/wp_ability/execute/)
@@ -32,6 +33,8 @@ An evidence level is not a security rating or endorsement.
 - [WordPress Core: required capabilities for Abilities](https://github.com/WordPress/wordpress-develop/commit/1881d63d19)
 - [WordPress Core: content-query author filter contract](https://github.com/WordPress/wordpress-develop/commit/e29e51dac6)
 - [WordPress Core: content-query author visibility](https://github.com/WordPress/wordpress-develop/commit/38a613a3f9)
+- [WordPress Core: shared input coercion](https://github.com/WordPress/wordpress-develop/commit/d1406a35d9)
+- [WordPress Core: schema-preserving REST results](https://github.com/WordPress/wordpress-develop/commit/8af9d90441)
 
 Verified project use: WordPress provides a central registry for machine-readable
 capabilities with JSON Schema, execution callbacks, and permission callbacks.
@@ -53,6 +56,15 @@ content-query author-slug filter with an author object and restrict author
 metadata visibility. These are implementation and compatibility review
 candidates for a future 7.2 baseline, not tested features of the pinned 7.1
 reference stack. See the [WordPress validation checklist](mappings/WORDPRESS.md#42-wordpress-72-validation-candidate).
+
+WordPress 7.1.4 is a published security release from October 28. The isolated
+E2E now pins that patched 7.1 release rather than the original 7.1 archive.
+On November 1 it completed with `ACCEPTED` against MCP Adapter 0.7.1; official
+core checksums matched 3,782 files, and setup refused the old cached core.
+Historical acceptance and deployed-site state remain distinct. Separately,
+7.2 development adds shared input coercion before permission/execution and
+schema-preserving REST result encoding. Those changes are compatibility
+candidates, not behavior claimed for the 7.1.4 test stack.
 
 ### Official WordPress MCP Adapter [A]
 
@@ -148,6 +160,9 @@ proprietary permanent agent identity model.
 - [MCP 2026-07-28 release notes](https://blog.modelcontextprotocol.io/posts/2026-07-28/)
 - [MCP Skills extension](https://modelcontextprotocol.io/extensions/skills/overview)
 - [SEP-2640: Skills Extension](https://modelcontextprotocol.io/seps/2640-skills-extension)
+- [MCP extension lifecycle, SEP-3392](https://modelcontextprotocol.io/seps/3392-extension-lifecycle)
+- [MCP extensions overview and negotiation](https://modelcontextprotocol.io/extensions/overview)
+- [Legacy negotiation documentation, PR 3364](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3364)
 
 Verified project use: MCP provides tools, resources, prompts, discovery,
 authorization, and optional extensions. The 2026-07-28 release uses a stateless
@@ -163,15 +178,28 @@ input and requires separate application authority, policy, approval, and
 evidence for any tool use, code execution, permission grant, or external action
 that follows from a loaded skill.
 
+Final Process SEP-3392 adds Experimental, Beta, and Stable extension stages;
+the specification directory records maturity, not the repository name alone.
+Skills and Tasks are Beta and may still break compatibility; Stable behavior
+is fixed within a core revision. Final SEP status is not proof that an
+extension is Stable or universally implemented. Future integrations must
+record the exact extension contract and core revision. This process change
+does not alter negotiation or grant application authority.
+
+Merged PR 3364 documents legacy initialization-based extension negotiation as
+implementation practice, without changing released schemas. It does not add
+old-revision support to AWG or prove extension compatibility for every SDK.
+
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-20 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-27 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 - [Chrome agent security considerations](https://developer.chrome.com/docs/agents/security)
 - [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
 - [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
+- [Pull request 326: cross-origin exposure and two-sided opt-in](https://github.com/webmachinelearning/webmcp/pull/326)
 - [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
 - [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
@@ -206,7 +234,7 @@ that follows from a loaded skill.
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-10-20 draft defines an imperative browser API
+Verified project use: the 2026-10-27 draft defines an imperative browser API
 for exposing tools to user agents and agents, includes `consequentialHint`, and
 records the provider document's origin in observed tool collections. The
 annotation is a classification hint, not permission or approval. Origin is
@@ -315,6 +343,13 @@ native-browser test result. The reference callback returns an application
 object and has no `executeTool()` result decoder. Native result-delivery tests
 remain a compatibility candidate; do not add speculative coercion or infer
 safe replay from a result-serialization error.
+
+Merged PR 326 documents cross-origin frame access through Permissions Policy,
+provider `exposedTo`, and consumer `fromOrigins` opt-in. This clarifies existing
+host mechanisms, not an application permission or human-approval grant.
+Agent-mediated data transfer between origins remains a separate risk. AWG's
+reference stays same-origin and does not forward an exposure option; its
+contract regression test does not claim native-browser isolation coverage.
 
 ### A2A Protocol [B]
 
@@ -462,3 +497,30 @@ Any source-dependent normative statement should retain a version or review date.
 - Scope: evidence and mapping updates only; retain WordPress 7.1, MCP Adapter
   0.7.1, existing WebMCP reference behavior, and the draft.4 release. No new
   native-browser or WordPress 7.2 acceptance is claimed.
+
+### Review window: 2026-10-25 to 2026-11-01
+
+- WordPress 7.1.4: published security release; isolated E2E `ACCEPTED` with
+  MCP Adapter 0.7.1. Exact-version and stale-cache checks now target the patched
+  core. Preserve earlier acceptance as history; this review does not deploy
+  or patch a public site.
+- WordPress 7.2 development: shared input coercion and REST output-shape changes
+  are implementation/compatibility candidates. Verify effective input binding,
+  rejection before callbacks, budget accounting, and schema-preserving output
+  before advancing the baseline.
+- WebMCP: October 27 draft adds PR 326's cross-origin explanation. The reference
+  remains same-origin, with an added contract regression. PR 348 and issue 361
+  remain open; neither UUID handles nor result coercion are adopted here.
+- MCP: SEP-3392 is Final; Skills and Tasks are Beta under the new lifecycle.
+  Legacy negotiation and SDK/authorization tutorial corrections are published
+  guidance, not a new core revision or a reason to add an absent adapter.
+- Official MCP Adapter and Agents API releases remain 0.7.1 and 0.16.1.
+  Adapter development updates include a Jetpack Autoloader patch; retain the
+  released plugin. Agents API has no new main commits in this window; Agent
+  User remains open. A2A changes are policy/link documentation, not wire/API
+  changes.
+- Japan profile and cited research: AISI still lists guide 1.20; PPC and arXiv
+  revision histories reveal no confirmed mapping change. METI direct landing
+  pages returned HTTP 403 again; indexed official sources still identify
+  Business Guidelines 1.2 and the 2025 contract checklist. Retrieval remains
+  partial, with no unverified Japan-profile requirements added.

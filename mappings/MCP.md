@@ -2,7 +2,7 @@
 
 **Mapping version:** Draft 0.1  
 **Protocol baseline:** MCP 2026-07-28  
-**Last reviewed:** 2026-09-21
+**Last reviewed:** 2026-11-01
 
 ## 1. Purpose
 
@@ -26,6 +26,22 @@ project rather than ship a parallel MCP server.
 | Tasks extension | Provides asynchronous protocol model | Maps only when a concrete internal work model exists |
 | Skills extension | Discovers and reads workflow instructions and files | Treats loaded content as untrusted input; does not grant tool or application authority |
 | Audit and evidence | May provide observability | Owns governance decision and execution evidence |
+
+### 2.1 Extension maturity and compatibility
+
+Final Process [SEP-3392](https://modelcontextprotocol.io/seps/3392-extension-lifecycle)
+defines Experimental, Beta, and Stable stages. Skills and Tasks are currently
+Beta; Final SEP status does not imply Stable extension behavior or complete
+SDK support. Beta contracts may change incompatibly. Before adding an
+integration, record its core revision and exact extension specification, and
+verify schema, negotiation, outcome, and authorization compatibility. Stable
+behavior is fixed within one core revision, not across all future revisions.
+
+The [extensions overview](https://modelcontextprotocol.io/extensions/overview)
+also documents initialization-based negotiation used by older implementations.
+That guidance does not modify released schemas or expand this mapping's
+2026-07-28 baseline. No Tasks, Skills, or legacy negotiation adapter is added
+merely because a capability appears in a support matrix.
 
 ## 3. Request mapping
 

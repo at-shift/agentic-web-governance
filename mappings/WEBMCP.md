@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-10-20 Draft Community Group Report, repository reviewed 2026-10-25  
-**Last reviewed:** 2026-10-25
+**Upstream snapshot:** 2026-10-27 Draft Community Group Report, repository reviewed 2026-11-01  
+**Last reviewed:** 2026-11-01
 
 ## 1. Purpose
 
@@ -73,6 +73,13 @@ descriptions or hints cannot be the sole security basis. This supports the
 existing boundaries here, not a new browser guarantee. The linked Chrome
 guides offer defense-in-depth advice; their suggested character budgets are
 not adopted WebMCP limits or new AWG requirements.
+
+Merged PR 326 documents the host's cross-origin frame boundary: applicable
+`tools` Permissions Policy plus provider `exposedTo` and consumer `fromOrigins`
+opt-in. Browser exposure is not application authority or consent to move data
+between origins. The reference deliberately omits `exposedTo`, including when
+an unsupported exposure option is supplied to its registration helper. Its
+contract test verifies this omission, not real-browser cross-origin behavior.
 
 ## 3. Actors and authority
 
@@ -361,7 +368,7 @@ awaits the host's registration promise and propagates rejection; it does not
 emulate platform registration or treat discovery as an authority grant.
 
 PR 348 proposes replacing `RegisteredTool` dictionaries with a UUID-backed
-`Tool` interface. It remains open on 2026-10-25. If adopted, review tool-handle
+`Tool` interface. It remains open on 2026-11-01. If adopted, review tool-handle
 identity, nullable schema/annotation fields, and the proposed restrictions on
 spreading, JSON serialization, and structured cloning. No such migration is
 required or claimed by the current adapter.
@@ -370,6 +377,8 @@ required or claimed by the current adapter.
 
 A WebMCP adapter should test at least:
 
+- the same-origin reference does not forward a caller-supplied cross-origin
+  exposure option to the host;
 - host registration rejection, including `InvalidStateError` and
   `NotAllowedError`, propagates without a fallback tool registry;
 - cancellation received while proposal evaluation is pending prevents later
@@ -433,6 +442,7 @@ A WebMCP adapter should test at least:
 - [Chrome agent security considerations](https://developer.chrome.com/docs/agents/security)
 - [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
 - [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
+- [Pull request 326: cross-origin exposure and two-sided opt-in](https://github.com/webmachinelearning/webmcp/pull/326)
 - [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
 - [Pull request 279: clarified `executeTool()` and schema value shapes](https://github.com/webmachinelearning/webmcp/pull/279)

@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-10-25
+**Last reviewed:** 2026-11-01
 
 ## 1. Purpose
 
@@ -192,6 +192,21 @@ metadata disclosure. Neither change automatically expands AWG's allowlist.
 These are implementation and compatibility candidates, not reasons to emulate
 7.2 in the reference plugin or claim a new E2E `ACCEPTED` result now.
 
+Development commit `d1406a35d9` adds shared input coercion and format sanitization
+after validation, before permission checks and execution. Nested coercion
+errors now fail with `ability_invalid_input` instead of falling back to raw
+input. Before a 7.2 upgrade, verify that permission probes and execution bind
+the same effective input, including schema defaults and normalization filters,
+and that type/format changes cannot reuse a different proposal or reserve one
+invocation's budget twice. Invalid/coercion-colliding input must reach neither
+permission nor execution callbacks.
+
+Development commit `8af9d90441` preserves REST result schema shape, including
+empty objects at the root and within lists, and disables `_fields`/`_embed`
+processing for the run route. Test these result shapes separately from MCP
+wire projection; do not infer one transport's compatibility from another's.
+Neither development change is claimed for the pinned WordPress 7.1.4 stack.
+
 ## 5. Ability metadata
 
 Use WordPress-native fields for:
@@ -341,6 +356,13 @@ On 2026-10-18, the isolated E2E completed with `ACCEPTED` against MCP Adapter
 session initialization causes no storage write and a non-exposed fixture
 Ability remains undiscoverable and uncallable. This local result does not
 change the historical deployed HTTPS 0.6.1 evidence or prove deployed patching.
+
+On 2026-11-01, the isolated E2E completed with `ACCEPTED` against the published
+WordPress 7.1.4 security release and MCP Adapter 0.7.1. The official core file
+checksums matched, and setup rejects a cached older core before installation.
+This refreshes the tested patch baseline without adopting 7.2 development
+semantics, changing the application permission boundary, or claiming any
+public-site update.
 
 ### Stage 2: Scoped write delegation
 

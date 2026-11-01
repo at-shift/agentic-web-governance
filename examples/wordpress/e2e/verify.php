@@ -28,7 +28,7 @@ require $wordpress_dir . '/wp-load.php';
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 global $wp_version;
-assert_same( '7.1', $wp_version, 'WordPress version' );
+assert_same( '7.1.4', $wp_version, 'WordPress version' );
 assert_true( is_plugin_active( 'mcp-adapter/mcp-adapter.php' ), 'MCP Adapter is inactive.' );
 assert_true(
 	is_plugin_active( 'agentic-web-governance-reference/agentic-web-governance-reference.php' ),

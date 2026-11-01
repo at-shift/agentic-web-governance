@@ -7,7 +7,7 @@ implementations rather than test doubles.
 
 ## Pinned stack
 
-- WordPress 7.1
+- WordPress 7.1.4 (October 28 security release)
 - Official WordPress MCP Adapter 0.7.1
 - MCP protocol `2026-07-28` sessionless HTTP requests
 - PHP 8.3+
@@ -27,7 +27,7 @@ installation. The web server listens on `127.0.0.1:8081`.
 
 `verify.php` passes only when all of these statements are true:
 
-1. The running application is exactly WordPress 7.1 with MCP Adapter 0.7.1.
+1. The running application is exactly WordPress 7.1.4 with MCP Adapter 0.7.1.
 2. An unauthenticated sessionless MCP discovery request is rejected.
 3. An authenticated client can list the default tools without creating a
    legacy MCP session.
@@ -85,3 +85,10 @@ file and refuses to terminate a process that does not match this server.
 
 The E2E environment is intentionally local-only. It is not a deployment recipe
 and does not add compatibility paths for WordPress 6.9 or 7.0.
+
+When the pinned WordPress version changes, setup refuses an older cached core
+instead of silently accepting it or overwriting it. Stop the owned E2E server,
+move `runtime/wordpress` to a private backup, and rerun setup. Keep
+`runtime/credentials.json` private and in place so setup can reuse the isolated
+database. The installer and acceptance verifier both check the exact core
+version; a historical `ACCEPTED` run is not evidence for a newly pinned stack.

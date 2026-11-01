@@ -93,7 +93,7 @@ The repository-level boundary tests do not require WordPress:
 npm run test:wordpress
 ```
 
-For acceptance against actual WordPress 7.1 and the official MCP Adapter 0.7.1,
+For acceptance against actual WordPress 7.1.4 and the official MCP Adapter 0.7.1,
 use the isolated local environment in [`e2e/`](e2e/):
 
 ```sh
@@ -153,6 +153,12 @@ On 2026-10-18, the local E2E also completed with `ACCEPTED` against MCP Adapter
 without a storage change and that a registered but non-exposed Ability cannot
 be discovered, invoked, or distinguished by its private metadata. This does not
 update or establish the patch status of the historical HTTPS installation.
+
+On 2026-11-01, the local E2E completed with `ACCEPTED` against WordPress 7.1.4
+and MCP Adapter 0.7.1. The core security release's official file checksums were
+verified, and setup now refuses an older cached core instead of treating it as
+the pinned version. This changes only the isolated acceptance environment;
+the deployed HTTPS installation has not been updated by this work.
 
 This result satisfies the Stage 1 reference-path exit condition. It is not a
 claim of production readiness, full specification conformance, or portability
