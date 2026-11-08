@@ -2,7 +2,7 @@
 
 **Mapping version:** Draft 0.1  
 **Protocol baseline:** MCP 2026-07-28  
-**Last reviewed:** 2026-11-01
+**Last reviewed:** 2026-11-08
 
 ## 1. Purpose
 
@@ -59,6 +59,11 @@ An MCP tool invocation maps as follows:
 MCP client identity is not automatically agent identity. MCP authorization is
 not automatically delegation to a specific application action.
 
+The merged optional-`_meta` restoration in PR 3469 targets the next draft's
+sampling, elicitation, and roots types; it does not rewrite the pinned
+2026-07-28 wire schema. Treat it as a future SDK/adapter compatibility candidate,
+not permission to promote metadata into application authority or approval.
+
 ## 4. Discovery
 
 Use MCP's own discovery and tool/resource/prompt mechanisms. Do not introduce a
@@ -71,6 +76,14 @@ all discoverable tools are safe for every user or context.
 Tool descriptions and annotations are untrusted inputs unless they come from a
 trusted, validated server and application source. They are not substitutes for
 authorization policy.
+
+Merged PR 3185 corrects the current and draft `find_resource` composition
+example. For a schema selecting mutually exclusive fields, type-check all
+supplied fields outside the selection branches and test mixed, wrongly typed
+fields as well as valid single-field input. A nonmatching `oneOf` branch can
+fail on a type error while another branch succeeds. This is schema-authoring
+guidance, not a changed JSON Schema algorithm or a discovered AWG bypass; the
+reference does not copy the affected example.
 
 ## 5. Authorization and consent
 
@@ -88,6 +101,13 @@ user consent and control. Governance implementations should:
 Protocol-level user interaction is a way to collect input or confirmation. It
 does not decide which actions require approval or how approvals are persisted,
 authorized, expired, or evidenced.
+
+The November 8 authorization-guide revision foregrounds Client ID Metadata
+Documents, marks Dynamic Client Registration deprecated, and uses current SDK
+examples with issuer, audience, scope, and origin checks. This is published
+integration guidance, not a new core revision or a new AWG authorization
+adapter. Review it when implementing such a client; the WordPress reference
+continues to use its existing authenticated application-principal boundary.
 
 ## 6. Multi Round-Trip Requests
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import assert from "node:assert/strict";
+import Ajv2020 from "ajv/dist/2020.js";
 
 import {
   WebMcpAdapterError,
@@ -86,6 +87,80 @@ passed += 1;
   });
   assert.deepEqual(Object.keys(registrationOptions), ["signal"]);
   assert.equal(Object.hasOwn(registrationOptions, "exposedTo"), false);
+  assert.equal(
+    Object.hasOwn(
+      documentObject.registrations.get("reference_tool"),
+      "outputSchema",
+    ),
+    false,
+  );
+  assert.deepEqual(kernel.calls.proposed, []);
+  assert.deepEqual(kernel.calls.executed, []);
+}
+passed += 1;
+
+for (const [proposalStatus, executionStatus, expectedStatus] of [
+  ["denied", undefined, "denied"],
+  ["pending_approval", undefined, "approval_required"],
+  ["ready", "executed", "succeeded"],
+  ["ready", "failed", "outcome_uncertain"],
+]) {
+  const documentObject = fakeDocument();
+  const kernel = kernelWith({
+    proposal: {
+      status: proposalStatus,
+      proposal_id: "schema-proposal",
+      reason_codes: ["POLICY_RESULT"],
+    },
+    execution: {
+      status: executionStatus,
+      proposal_id: "schema-proposal",
+      reason_codes: ["EXECUTION_RESULT"],
+      result: { name: "Example" },
+    },
+  });
+  const outputSchema = {
+    type: "object",
+    properties: {
+      awg_version: { const: 1 },
+      status: {
+        enum: ["denied", "approval_required", "succeeded", "outcome_uncertain"],
+      },
+      reason_codes: { type: "array", items: { type: "string" } },
+    },
+    required: ["awg_version", "status", "reason_codes"],
+  };
+  await register(documentObject, kernel, { outputSchema });
+  const tool = documentObject.registrations.get("reference_tool");
+  assert.deepEqual(tool.outputSchema, outputSchema);
+  assert.notEqual(tool.outputSchema, outputSchema);
+  outputSchema.properties.status.enum.push("caller-mutated");
+  assert.equal(
+    tool.outputSchema.properties.status.enum.includes("caller-mutated"),
+    false,
+  );
+
+  const validate = new Ajv2020({ strict: true }).compile(tool.outputSchema);
+  const result = await tool.execute({});
+  assert.equal(result.status, expectedStatus);
+  assert.equal(validate(result), true, JSON.stringify(validate.errors));
+  assert.equal(kernel.calls.executed.length, proposalStatus === "ready" ? 1 : 0);
+  passed += 1;
+}
+
+{
+  const documentObject = fakeDocument();
+  const kernel = kernelWith({});
+  const failure = new TypeError("Host rejected output schema");
+  documentObject.modelContext.registerTool = async (tool) => {
+    assert.deepEqual(tool.outputSchema, { type: "object" });
+    throw failure;
+  };
+  await assert.rejects(
+    () => register(documentObject, kernel, { outputSchema: { type: "object" } }),
+    (error) => error === failure,
+  );
+  assert.equal(documentObject.registrations.size, 0);
   assert.deepEqual(kernel.calls.proposed, []);
   assert.deepEqual(kernel.calls.executed, []);
 }
@@ -346,7 +421,13 @@ passed += 1;
     kernel,
     applicationPrincipal: { type: "application-user", id: "user-42" },
     applicationInstanceId: "example.test",
+    outputSchema: { type: "object" },
   });
+  assert.deepEqual(
+    documentObject.registrations.get("agentic_web_governance_site_summary")
+      .outputSchema,
+    { type: "object" },
+  );
   const result = await documentObject.registrations
     .get("agentic_web_governance_site_summary")
     .execute({ fields: ["name", "url"] });

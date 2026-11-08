@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-10-27 Draft Community Group Report, repository reviewed 2026-11-01  
-**Last reviewed:** 2026-11-01
+**Upstream snapshot:** 2026-11-02 Draft Community Group Report, repository reviewed 2026-11-08  
+**Last reviewed:** 2026-11-08
 
 ## 1. Purpose
 
@@ -47,6 +47,18 @@ adapter therefore SHOULD pass a serializable object directly and MUST NOT
 depend on pre-stringified arguments or schema values as its normal path. The
 current draft treats an omitted or `undefined` input as an empty object; this
 default does not satisfy any required application fields or reduce validation.
+
+Merged PR 254 adds optional `outputSchema` to `ModelContextTool` and
+`RegisteredTool`, with serialization at registration and a parsed deep copy
+at discovery. The output is expected to match the schema and an agent may
+reject a mismatch; this does not establish universal browser-side validation.
+The reference helpers forward a cloned schema only when supplied. It must
+describe the complete AWG application outcome, not just a successful business
+payload. Omission remains supported, and host registration failure propagates
+without fallback. A declaration cannot suppress refusal, satisfy approval,
+prove an effect completed, or make a result-delivery failure safe to replay.
+Native-browser schema discovery and result delivery remain compatibility
+validation candidates, distinct from the test-host contract checks.
 
 Each page observation still contains the complete tool map required by the
 draft. A non-normative clarification permits agent products to diff, cache,
@@ -195,6 +207,12 @@ mechanism.
 Visible, hidden, background, and headless browser execution are all untrusted
 with respect to proving a human decision unless the accepted authorization
 mechanism independently establishes that provenance.
+
+The November 5 issue-288 fixture reports that CDP input can satisfy trusted
+event and transient-activation checks in Chrome 156. This is a single
+author-reported observation, not an AWG reproduction or universal host claim.
+It supports this boundary without adopting the proposed page marker or
+reclassifying trusted activation as independent human authorization.
 
 ## 7. Validation and input handling
 
@@ -368,7 +386,7 @@ awaits the host's registration promise and propagates rejection; it does not
 emulate platform registration or treat discovery as an authority grant.
 
 PR 348 proposes replacing `RegisteredTool` dictionaries with a UUID-backed
-`Tool` interface. It remains open on 2026-11-01. If adopted, review tool-handle
+`Tool` interface. It remains open on 2026-11-08. If adopted, review tool-handle
 identity, nullable schema/annotation fields, and the proposed restrictions on
 spreading, JSON serialization, and structured cloning. No such migration is
 required or claimed by the current adapter.
@@ -377,6 +395,9 @@ required or claimed by the current adapter.
 
 A WebMCP adapter should test at least:
 
+- optional output-schema omission, isolated copies of supplied declarations,
+  propagation of host rejection, and schemas covering denial, approval pending,
+  uncertain outcome, and success without changing governance dispatch;
 - the same-origin reference does not forward a caller-supplied cross-origin
   exposure option to the host;
 - host registration rejection, including `InvalidStateError` and
@@ -443,6 +464,7 @@ A WebMCP adapter should test at least:
 - [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
 - [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
 - [Pull request 326: cross-origin exposure and two-sided opt-in](https://github.com/webmachinelearning/webmcp/pull/326)
+- [Pull request 254: optional output schemas](https://github.com/webmachinelearning/webmcp/pull/254)
 - [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
 - [Pull request 279: clarified `executeTool()` and schema value shapes](https://github.com/webmachinelearning/webmcp/pull/279)

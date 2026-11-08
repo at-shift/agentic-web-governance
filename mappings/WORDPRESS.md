@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-11-01
+**Last reviewed:** 2026-11-08
 
 ## 1. Purpose
 
@@ -206,6 +206,15 @@ empty objects at the root and within lists, and disables `_fields`/`_embed`
 processing for the run route. Test these result shapes separately from MCP
 wire projection; do not infer one transport's compatibility from another's.
 Neither development change is claimed for the pinned WordPress 7.1.4 stack.
+
+The November 6 development clarification (`4110c7f0a3`) makes the direct-probe
+candidate explicit: `check_permissions()` does not prepare its input. A future
+7.2 integration must test normalization, validation, and coercion in execution
+order before the permission probe, stopping on errors, rather than assuming
+the probe performs those steps. Development commit `3fe7aba7db` also restores
+mandatory registered categories instead of an `uncategorized` fallback. The
+current reference already registers its category explicitly; do not add a
+fallback or claim that these 7.2 paths were exercised on the 7.1.4 baseline.
 
 ## 5. Ability metadata
 

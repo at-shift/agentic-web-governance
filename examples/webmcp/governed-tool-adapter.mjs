@@ -106,6 +106,7 @@ export async function registerGovernedWebMcpTool({
   title,
   description,
   inputSchema = { type: "object", additionalProperties: false },
+  outputSchema,
   annotations,
   validateInput = () => true,
   buildAction,
@@ -151,6 +152,11 @@ export async function registerGovernedWebMcpTool({
     ...(typeof title === "string" && title.length > 0 ? { title } : {}),
     description,
     inputSchema: structuredClone(inputSchema),
+    // This describes the complete AWG outcome, not only its business result.
+    // Declaration does not replace governance or add host-side validation.
+    ...(outputSchema === undefined
+      ? {}
+      : { outputSchema: structuredClone(outputSchema) }),
     annotations: normalizeAnnotations(annotations),
     execute: async (inputObject = {}, options = {}) => {
       const invocationSignal = options.signal;

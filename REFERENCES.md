@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-11-01
+**Last reviewed:** 2026-11-08
 
 ## 1. Evidence levels
 
@@ -35,6 +35,8 @@ An evidence level is not a security rating or endorsement.
 - [WordPress Core: content-query author visibility](https://github.com/WordPress/wordpress-develop/commit/38a613a3f9)
 - [WordPress Core: shared input coercion](https://github.com/WordPress/wordpress-develop/commit/d1406a35d9)
 - [WordPress Core: schema-preserving REST results](https://github.com/WordPress/wordpress-develop/commit/8af9d90441)
+- [WordPress Core: direct permission-check input preparation](https://github.com/WordPress/wordpress-develop/commit/4110c7f0a3)
+- [WordPress Core: required registered categories](https://github.com/WordPress/wordpress-develop/commit/3fe7aba7db)
 
 Verified project use: WordPress provides a central registry for machine-readable
 capabilities with JSON Schema, execution callbacks, and permission callbacks.
@@ -65,6 +67,12 @@ Historical acceptance and deployed-site state remain distinct. Separately,
 7.2 development adds shared input coercion before permission/execution and
 schema-preserving REST result encoding. Those changes are compatibility
 candidates, not behavior claimed for the 7.1.4 test stack.
+
+November 6 development work clarifies that direct permission probes must
+prepare input in normalization, validation, and coercion order, and removes
+the development branch's automatic `uncategorized` fallback. These remain 7.2
+compatibility candidates. The existing reference already registers an explicit
+category; neither a baseline upgrade nor a callback wrapper is added here.
 
 ### Official WordPress MCP Adapter [A]
 
@@ -163,6 +171,9 @@ proprietary permanent agent identity model.
 - [MCP extension lifecycle, SEP-3392](https://modelcontextprotocol.io/seps/3392-extension-lifecycle)
 - [MCP extensions overview and negotiation](https://modelcontextprotocol.io/extensions/overview)
 - [Legacy negotiation documentation, PR 3364](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3364)
+- [MCP composition-example correction, PR 3185](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3185)
+- [MCP next-draft optional metadata restoration, PR 3469](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3469)
+- [MCP authorization-guide revision, PR 3518](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3518)
 
 Verified project use: MCP provides tools, resources, prompts, discovery,
 authorization, and optional extensions. The 2026-07-28 release uses a stateless
@@ -190,9 +201,19 @@ Merged PR 3364 documents legacy initialization-based extension negotiation as
 implementation practice, without changing released schemas. It does not add
 old-revision support to AWG or prove extension compatibility for every SDK.
 
+Merged PR 3185 corrects an exclusive-field `oneOf` example in both current and
+draft documentation: all supplied fields need their intended type constraints,
+even when another branch matches. This is an authoring correction, not a JSON
+Schema engine change; AWG does not copy that example. Merged PR 3469 restores
+optional `_meta` on several input-request/result types in the next draft only,
+not the pinned 2026-07-28 schema. It is a future SDK/adapter validation candidate.
+The revised authorization guide foregrounds Client ID Metadata Documents and
+deprecates Dynamic Client Registration in its examples; no new core revision
+or AWG authentication adapter follows from that documentation update.
+
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-10-27 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-11-02 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
@@ -200,6 +221,9 @@ old-revision support to AWG or prove extension compatibility for every SDK.
 - [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
 - [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
 - [Pull request 326: cross-origin exposure and two-sided opt-in](https://github.com/webmachinelearning/webmcp/pull/326)
+- [Pull request 254: optional output schemas](https://github.com/webmachinelearning/webmcp/pull/254)
+- [Pull request 376: proposed invisible-character guidance](https://github.com/webmachinelearning/webmcp/pull/376)
+- [Issue 288: November 5 CDP self-approval observation](https://github.com/webmachinelearning/webmcp/issues/288#issuecomment-6657278511)
 - [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
 - [Pull request 281: origin in observed tool collections](https://github.com/webmachinelearning/webmcp/pull/281)
 - [Pull request 251: JavaScript object input for `executeTool()`](https://github.com/webmachinelearning/webmcp/pull/251)
@@ -234,7 +258,7 @@ old-revision support to AWG or prove extension compatibility for every SDK.
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-10-27 draft defines an imperative browser API
+Verified project use: the 2026-11-02 draft defines an imperative browser API
 for exposing tools to user agents and agents, includes `consequentialHint`, and
 records the provider document's origin in observed tool collections. The
 annotation is a classification hint, not permission or approval. Origin is
@@ -350,6 +374,22 @@ host mechanisms, not an application permission or human-approval grant.
 Agent-mediated data transfer between origins remains a separate risk. AWG's
 reference stays same-origin and does not forward an exposure option; its
 contract regression test does not claim native-browser isolation coverage.
+
+Merged PR 254 adds optional output-schema declarations to registered and
+discovered tools. The reference helpers now clone and forward an opt-in schema
+for the complete AWG outcome envelope, without adding an output-validation
+engine or changing policy dispatch. Schema conformity is neither approval nor
+proof of a completed effect; mismatch after dispatch cannot justify unsafe
+replay. Omission remains supported. Native-browser discovery and result
+delivery are compatibility candidates, not established by the test host.
+
+A November 5 issue-288 comment reports a Chrome 156 fixture where CDP input
+passed page checks for trusted events and transient activation, unlike a
+script-generated click. This is author-reported, not independently reproduced
+here or evidence about every host. It reinforces the existing independent
+human-authorization boundary without adopting the suggested DOM marker.
+PR 376's invisible-character mitigation remains an open non-normative proposal;
+AWG adds no speculative text-stripping rule or schema-value rewriting.
 
 ### A2A Protocol [B]
 
@@ -524,3 +564,32 @@ Any source-dependent normative statement should retain a version or review date.
   pages returned HTTP 403 again; indexed official sources still identify
   Business Guidelines 1.2 and the 2025 contract checklist. Retrieval remains
   partial, with no unverified Japan-profile requirements added.
+
+### Review window: 2026-11-01 to 2026-11-08
+
+- WebMCP: November 2 draft adopts PR 254. Implement optional `outputSchema`
+  forwarding in the existing helpers and test complete outcome envelopes,
+  isolated copies, omission, and host rejection. Native-browser compatibility
+  remains a validation candidate; Chrome's imperative guide is still dated
+  October 16. PR 348 and issue 361 remain open.
+- Approval evidence: record the November 5 CDP fixture as a single
+  author-reported observation. Keep independent authorization; do not promote
+  trusted DOM activation or a proposed page marker into approval proof.
+  Invisible-character PR 376 is still open and not an AWG requirement.
+- WordPress 7.2 development: direct permission-input preparation and category
+  registration remain compatibility candidates. Preserve WordPress 7.1.4 /
+  official MCP Adapter 0.7.1 and the November 1 E2E acceptance as historical
+  evidence, not a new 7.2 result. Adapter main contains dependency updates;
+  no newer plugin release is published. Agents API remains 0.16.1 with no new
+  main commits; Agent User remains open.
+- MCP: distinguish the adopted current/draft composition-example correction,
+  the next-draft-only `_meta` restoration, Beta Skills link maintenance, and
+  published authorization tutorial changes. Do not rewrite the pinned wire
+  contract or add absent sampling/elicitation/Skills adapters.
+- A2A: the a2a-cli Client ID Metadata Document is implementation metadata,
+  not a new protocol or AWG adapter dependency.
+- Japan profile and cited research: AISI still lists evaluation guide 1.20;
+  PPC and cited arXiv revision histories require no confirmed mapping update.
+  METI direct pages again returned HTTP 403; indexed official material still
+  identifies Business Guidelines 1.2 and the 2025 contract checklist. Retain
+  partial-retrieval status and add no unverified requirements.

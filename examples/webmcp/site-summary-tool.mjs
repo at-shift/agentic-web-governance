@@ -41,6 +41,7 @@ export async function registerSiteSummaryTool({
   applicationPrincipal,
   applicationInstanceId,
   registrationSignal,
+  outputSchema,
 }) {
   if (
     !applicationPrincipal ||
@@ -83,6 +84,7 @@ export async function registerSiteSummaryTool({
       untrustedContentHint: false,
       consequentialHint: false,
     },
+    outputSchema,
     validateInput(input) {
       if (Object.keys(input).some((key) => key !== "fields")) {
         return ["INPUT_PROPERTY_UNSUPPORTED"];
