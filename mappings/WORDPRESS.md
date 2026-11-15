@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-11-08
+**Last reviewed:** 2026-11-15
 
 ## 1. Purpose
 
@@ -207,14 +207,22 @@ processing for the run route. Test these result shapes separately from MCP
 wire projection; do not infer one transport's compatibility from another's.
 Neither development change is claimed for the pinned WordPress 7.1.4 stack.
 
-The November 6 development clarification (`4110c7f0a3`) makes the direct-probe
-candidate explicit: `check_permissions()` does not prepare its input. A future
-7.2 integration must test normalization, validation, and coercion in execution
-order before the permission probe, stopping on errors, rather than assuming
-the probe performs those steps. Development commit `3fe7aba7db` also restores
-mandatory registered categories instead of an `uncategorized` fallback. The
-current reference already registers its category explicitly; do not add a
-fallback or claim that these 7.2 paths were exercised on the 7.1.4 baseline.
+The November 6 direct-probe clarification (`4110c7f0a3`) is superseded by
+[November 10 development commit `d30bfa8c80`](https://github.com/WordPress/wordpress-develop/commit/d30bfa8c80).
+`check_permissions()` still does not prepare input; a future 7.2 integration
+must first call public `prepare_input()` and stop on `WP_Error`. That method
+normalizes, validates, then sanitizes, and is shared by `execute()` and the REST
+permission probe. Unreleased public `coerce_input()` is replaced by protected
+`sanitize_input()`; do not call that internal method or retain the superseded
+manual sequence as the integration contract. Verify that preparation failures
+reach neither permission nor execution callbacks and that probe/execute use
+the same effective action without double-counting budgets. The current
+reference uses neither `coerce_input()` nor `sanitize_input()` and retains 7.1.4;
+Beta 5 publication is not a new E2E acceptance result.
+
+Development commit `3fe7aba7db` also restores mandatory registered categories
+instead of an `uncategorized` fallback. The current reference already registers
+its category explicitly; no fallback or untested 7.2 compatibility claim follows.
 
 ## 5. Ability metadata
 

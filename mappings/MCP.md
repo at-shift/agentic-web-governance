@@ -2,7 +2,7 @@
 
 **Mapping version:** Draft 0.1  
 **Protocol baseline:** MCP 2026-07-28  
-**Last reviewed:** 2026-11-08
+**Last reviewed:** 2026-11-15
 
 ## 1. Purpose
 
@@ -42,6 +42,18 @@ also documents initialization-based negotiation used by older implementations.
 That guidance does not modify released schemas or expand this mapping's
 2026-07-28 baseline. No Tasks, Skills, or legacy negotiation adapter is added
 merely because a capability appears in a support matrix.
+
+The [November 11 release-cycle announcement](https://blog.modelcontextprotocol.io/posts/mcp-release-cycle/)
+targets March 30, 2027 under a six-month cadence. This is release planning,
+not a new wire revision or an instruction to upgrade existing clients now.
+
+The [November 10 file-transfer introduction](https://blog.modelcontextprotocol.io/posts/exploring-file-uploads-and-downloads-in-mcp/)
+describes optional experimental `io.modelcontextprotocol/files`, without a
+reference implementation yet. If an integration becomes concrete, review
+destination approval, cross-origin credential isolation, upload-state binding,
+replay controls, and authoritative completion. A transfer ticket or HTTP success
+does not establish application authorization or completion of the business
+action. AWG adds no file adapter or requirement from this proposal.
 
 ## 3. Request mapping
 
@@ -135,6 +147,14 @@ still be durable application state.
 Every request must carry or resolve the context needed for policy. Implementers
 must add application-level replay controls for non-idempotent actions and must
 not rely on a transport session as the authorization boundary.
+
+A [November 12 issue-3394 report](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3394#issuecomment-6833074067)
+separates effect count, parameter binding, and result recovery on one author's
+endpoint: same-key retries executed again, while receipt lookup required the
+original run ID. The fixture did not inject a lost response. It is unreplicated
+implementation evidence, not adopted protocol behavior or a new AWG test
+result. A receipt digest alone therefore cannot establish replay protection
+or recovery after the identifying response is lost.
 
 ## 8. Header-based routing
 

@@ -1,19 +1,26 @@
 # WebMCP Reference Adapter
 
 **Status:** Experimental, read-only reference implementation  
-**Upstream:** WebMCP Draft Community Group Report, 2 November 2026  
+**Upstream:** WebMCP Draft Community Group Report, 13 November 2026  
 **API:** Imperative `document.modelContext.registerTool()`
 
 This directory demonstrates a narrow WebMCP protocol adapter around the AWG
 governance kernel. It is not a browser polyfill and does not claim that every
 browser implements WebMCP.
 
-The November 8 review retains the current `RegisteredTool` contract. Upstream
+The November 15 review retains the current `RegisteredTool` contract. Upstream
 PR 348's UUID-backed `Tool` interface is still a proposal. The host owns
 detached-document, duplicate-registration, and Permissions Policy checks;
 the adapter propagates registration errors. Contract tests cover that behavior
 and cancellation during proposal evaluation, without claiming native-browser
 interoperability or reimplementing host algorithms.
+
+The updated draft fires `toolactivated` after callback invocation. The helper
+does not rely on that event to authorize execution. Associated-document and
+traversable discovery clarifications remain host responsibilities. The separate
+Blink continuation explainer is not implemented here; adding resumption would
+require cancellation and authorization validation before resumed effects. See
+the [mapping's compatibility candidates](../../mappings/WEBMCP.md#9-compatibility-posture).
 
 Merged PR 254 adds optional `outputSchema` to registration and discovery.
 Both registration helpers accept a plain, serializable schema object, clone it,

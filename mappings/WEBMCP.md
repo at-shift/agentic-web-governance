@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-11-02 Draft Community Group Report, repository reviewed 2026-11-08  
-**Last reviewed:** 2026-11-08
+**Upstream snapshot:** 2026-11-13 Draft Community Group Report, repository reviewed 2026-11-15  
+**Last reviewed:** 2026-11-15
 
 ## 1. Purpose
 
@@ -37,6 +37,12 @@ derives provider origin from the owning document, passes structured input to
 the governance kernel, and returns expected denial or approval states as
 application results. Its deterministic tests exercise the adapter contract;
 they are not evidence that a particular browser ships WebMCP.
+
+Merged PRs 380 and 382 associate each `ModelContext` with its owning Document
+and clarify `getTools()` discovery across exposed active documents in the same
+traversable, not only descendants. Host scope checks still apply. The reference
+registers on the supplied document and implements no discovery wrapper; native
+document-lifecycle and discovery tests remain compatibility candidates.
 
 The `executeTool()` caller-facing contract accepts a discovered
 `RegisteredTool` and a JavaScript input object, rejects non-object values, and
@@ -263,6 +269,13 @@ governed execution and authoritative application state. Activation does not
 prove success, and cancellation does not prove rollback or absence of partial
 effects.
 
+[Merged PR 371](https://github.com/webmachinelearning/webmcp/pull/371) moves
+`toolactivated` after invocation of the `execute` callback, not after its
+asynchronous completion. A listener therefore cannot gate entry to that
+callback. Keep application authorization inside the governed execution path;
+the reference installs no event-based authorization hook. Event ordering is a
+native-host compatibility candidate, not simulated platform coverage.
+
 When provider provenance affects routing, policy, or reconstruction, evidence
 SHOULD record the normalized tool-owning origin obtained from a trusted host
 context. It MUST NOT substitute origin for the application principal or retain
@@ -386,10 +399,21 @@ awaits the host's registration promise and propagates rejection; it does not
 emulate platform registration or treat discovery as an authority grant.
 
 PR 348 proposes replacing `RegisteredTool` dictionaries with a UUID-backed
-`Tool` interface. It remains open on 2026-11-08. If adopted, review tool-handle
+`Tool` interface. It remains open on 2026-11-15. If adopted, review tool-handle
 identity, nullable schema/annotation fields, and the proposed restrictions on
 spreading, JSON serialization, and structured cloning. No such migration is
 required or claimed by the current adapter.
+
+[Merged PR 381](https://github.com/webmachinelearning/webmcp/pull/381) updates
+the separate continuation explainer to describe Blink, not the specification
+API. It describes one-time tokens scoped to the same origin and tab, with a
+current 30-second expiry. Cancellation leaves an unredeemed token usable;
+resumption can run a callback even though its result is discarded. The
+reference has no `requestToken()` or `resumeTool()` integration. If one is
+introduced, validate cancellation fencing and re-check action authority before
+any resumed effect; token possession is not approval or proof of no prior
+effect. These are future implementation/compatibility candidates, not a new
+AWG protocol requirement or a claim of independently tested Blink behavior.
 
 ## 10. Conformance scenarios
 

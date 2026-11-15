@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-11-08
+**Last reviewed:** 2026-11-15
 
 ## 1. Evidence levels
 
@@ -37,6 +37,8 @@ An evidence level is not a security rating or endorsement.
 - [WordPress Core: schema-preserving REST results](https://github.com/WordPress/wordpress-develop/commit/8af9d90441)
 - [WordPress Core: direct permission-check input preparation](https://github.com/WordPress/wordpress-develop/commit/4110c7f0a3)
 - [WordPress Core: required registered categories](https://github.com/WordPress/wordpress-develop/commit/3fe7aba7db)
+- [WordPress Core: shared `prepare_input()` API](https://github.com/WordPress/wordpress-develop/commit/d30bfa8c80)
+- [WordPress 7.2 Beta 5](https://wordpress.org/news/2026/11/wordpress-7-2-beta-5/)
 
 Verified project use: WordPress provides a central registry for machine-readable
 capabilities with JSON Schema, execution callbacks, and permission callbacks.
@@ -73,6 +75,12 @@ prepare input in normalization, validation, and coercion order, and removes
 the development branch's automatic `uncategorized` fallback. These remain 7.2
 compatibility candidates. The existing reference already registers an explicit
 category; neither a baseline upgrade nor a callback wrapper is added here.
+
+November 10 development commit `d30bfa8c80` supersedes the manual preparation
+sequence with public `prepare_input()`, used by execution and REST permission
+probes. It replaces unreleased `coerce_input()` with protected sanitization.
+Update the 7.2 compatibility candidate accordingly; Beta 5's publication does
+not establish AWG acceptance or change the pinned 7.1.4 baseline.
 
 ### Official WordPress MCP Adapter [A]
 
@@ -174,6 +182,9 @@ proprietary permanent agent identity model.
 - [MCP composition-example correction, PR 3185](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3185)
 - [MCP next-draft optional metadata restoration, PR 3469](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3469)
 - [MCP authorization-guide revision, PR 3518](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3518)
+- [MCP release-cycle announcement](https://blog.modelcontextprotocol.io/posts/mcp-release-cycle/)
+- [MCP experimental file-transfer introduction](https://blog.modelcontextprotocol.io/posts/exploring-file-uploads-and-downloads-in-mcp/)
+- [MCP issue 3394: November 12 retry/recovery observation](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3394#issuecomment-6833074067)
 
 Verified project use: MCP provides tools, resources, prompts, discovery,
 authorization, and optional extensions. The 2026-07-28 release uses a stateless
@@ -211,9 +222,21 @@ The revised authorization guide foregrounds Client ID Metadata Documents and
 deprecates Dynamic Client Registration in its examples; no new core revision
 or AWG authentication adapter follows from that documentation update.
 
+The November 11 release-cycle announcement schedules six-month specification
+releases and targets March 30, 2027; it is planning, not a shipped wire revision.
+The November 10 file-transfer article describes an optional experimental
+extension without a reference implementation. Preserve destination approval,
+credential isolation, and retry/outcome boundaries when reviewing a future
+integration; neither publication adds an AWG adapter or normative requirement.
+
+An issue-3394 author reports that same-key retries executed again on their
+endpoint, while receipt lookup worked only when the original run ID was known.
+The fixture explicitly did not inject a lost response. This is a single
+implementation observation, not an AWG reproduction or a protocol-wide result.
+
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-11-02 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-11-13 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
@@ -222,6 +245,10 @@ or AWG authentication adapter follows from that documentation update.
 - [Pull request 334: agent-level security guidance](https://github.com/webmachinelearning/webmcp/pull/334)
 - [Pull request 326: cross-origin exposure and two-sided opt-in](https://github.com/webmachinelearning/webmcp/pull/326)
 - [Pull request 254: optional output schemas](https://github.com/webmachinelearning/webmcp/pull/254)
+- [Pull request 371: activation after callback invocation](https://github.com/webmachinelearning/webmcp/pull/371)
+- [Pull request 380: associated Document](https://github.com/webmachinelearning/webmcp/pull/380)
+- [Pull request 382: traversable discovery scope](https://github.com/webmachinelearning/webmcp/pull/382)
+- [Pull request 381: Blink-aligned continuation explainer](https://github.com/webmachinelearning/webmcp/pull/381)
 - [Pull request 376: proposed invisible-character guidance](https://github.com/webmachinelearning/webmcp/pull/376)
 - [Issue 288: November 5 CDP self-approval observation](https://github.com/webmachinelearning/webmcp/issues/288#issuecomment-6657278511)
 - [Issue 361: reported result-serialization divergence](https://github.com/webmachinelearning/webmcp/issues/361)
@@ -258,7 +285,7 @@ or AWG authentication adapter follows from that documentation update.
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
 
-Verified project use: the 2026-11-02 draft defines an imperative browser API
+Verified project use: the 2026-11-13 draft defines an imperative browser API
 for exposing tools to user agents and agents, includes `consequentialHint`, and
 records the provider document's origin in observed tool collections. The
 annotation is a classification hint, not permission or approval. Origin is
@@ -390,6 +417,13 @@ here or evidence about every host. It reinforces the existing independent
 human-authorization boundary without adopting the suggested DOM marker.
 PR 376's invisible-character mitigation remains an open non-normative proposal;
 AWG adds no speculative text-stripping rule or schema-value rewriting.
+
+Merged PRs 371, 380, and 382 clarify activation after callback invocation,
+the owning Document, and discovery across active documents in the same
+traversable. PR 381 instead updates the separate continuation explainer to
+describe Blink behavior, including cancellation that leaves an unredeemed
+token usable. No continuation API is added to AWG; host lifecycle and resumed
+authorization remain compatibility candidates, not tested browser guarantees.
 
 ### A2A Protocol [B]
 
@@ -593,3 +627,34 @@ Any source-dependent normative statement should retain a version or review date.
   METI direct pages again returned HTTP 403; indexed official material still
   identifies Business Guidelines 1.2 and the 2025 contract checklist. Retain
   partial-retrieval status and add no unverified requirements.
+
+### Review window: 2026-11-08 to 2026-11-15
+
+- WebMCP: November 13 draft reviewed; adopted activation/document/discovery
+  clarifications are recorded. Chrome's imperative guide remains dated October
+  16. PR 348, PR 376, and issue 361 remain open. PR 381 is an explainer update,
+  not an adopted continuation API. The implementation-status edit references
+  Brave 1.102.2 expected January 5, 2027; do not claim it is already shipping.
+- Implementation and compatibility candidates: native WebMCP event ordering,
+  associated-document/discovery scope, and cancellation during any future
+  continuation path; WordPress 7.2's public `prepare_input()` before direct
+  permission checks. Existing helpers use neither discovery nor continuations;
+  the WordPress reference does not call the removed development API. No runtime
+  migration or new native-browser/7.2 E2E acceptance is claimed.
+- WordPress 7.2 Beta 5 is published; the tested stable stack remains 7.1.4 /
+  MCP Adapter 0.7.1. Adapter main has development-dependency maintenance only;
+  Agents API remains 0.16.1 with no new main commits, and Agent User stays open.
+- MCP: record the release plan and experimental file-transfer work separately
+  from the current 2026-07-28 contract. OAuth metadata draft-03 references affect
+  next-draft documentation, not released schemas. Issue 3394's new retry/recovery
+  report is author-observed, with lost-response injection explicitly unproven.
+  Registry, stewardship, and community-process edits do not change AWG's API.
+- A2A: documentation presentation and partner-list changes, with no protocol
+  migration or new adapter dependency identified.
+- Japan profile and cited research: AISI still lists evaluation guide 1.20;
+  PPC and all six cited arXiv revision histories yield no confirmed mapping
+  update. Direct METI landing-page requests returned HTTP 403 on retry; indexed
+  official sources still identify Business Guidelines 1.2 and the 2025 contract
+  checklist. Preserve partial verification and existing requirements.
+- Scope: mapping and evidence updates only. Retain draft.6; no new Release or
+  public-site deployment is warranted by this review.
