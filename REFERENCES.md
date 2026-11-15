@@ -534,9 +534,11 @@ a threat claim, control mapping, or tested baseline.
 Project use: published, testable security requirements for comparison with AWG
 controls and evidence, especially C9 (agentic orchestration), C10 (MCP), and C12
 (monitoring and logging). Cite versioned requirement IDs. Version 1.02 is
-development work, not the selected reference. A future control-to-test mapping
-is a validation candidate, not a claim of AISVS conformance or a replacement
-for AWG's acceptance procedure and underlying application-security checks.
+development work, not the selected reference. The initial control-to-test mapping
+is recorded in the [scoped test evidence map](mappings/AISVS-1.01.md), covering
+C9, C10, and C12 with explicit remaining gaps. The map is not a claim of AISVS
+conformance or a replacement for AWG's acceptance procedure and underlying
+application-security checks.
 
 ### OWASP Agent Control Standard [B]
 
@@ -762,3 +764,8 @@ release or contract; do not turn every upstream edit into an AWG requirement.
   disclosures before using them as implementation or Japan-profile evidence.
 - Extend this document's Monitoring list accordingly. Runtime code, tested
   baselines, acceptance status, and the draft.6 release remain unchanged.
+- Create the [AISVS 1.01 test evidence map](mappings/AISVS-1.01.md): all 98
+  entries in C9/C10/C12, including one removed identifier, are compared with
+  identified assertions and missing proof. Record bounded next tests separately
+  from new integration prerequisites and absent subsystems. This is a scoped
+  review of existing code/tests, not 98 passes or a new acceptance result.

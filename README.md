@@ -156,6 +156,11 @@ npm test
 
 Dependency versions are pinned in `package-lock.json` and `composer.lock`.
 
+The [AISVS 1.01 test evidence map](mappings/AISVS-1.01.md) compares selected
+security-verification chapters with existing assertions and records missing
+proof and next tests. It is a scoped review aid, not an AISVS conformance claim
+or an additional normative source for Draft 0.1.
+
 ## Non-goals
 
 This project is not:
