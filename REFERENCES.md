@@ -185,6 +185,8 @@ proprietary permanent agent identity model.
 - [MCP release-cycle announcement](https://blog.modelcontextprotocol.io/posts/mcp-release-cycle/)
 - [MCP experimental file-transfer introduction](https://blog.modelcontextprotocol.io/posts/exploring-file-uploads-and-downloads-in-mcp/)
 - [MCP issue 3394: November 12 retry/recovery observation](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3394#issuecomment-6833074067)
+- [MCP Security Best Practices, 2026-07-28](https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices)
+- [Official MCP conformance suite](https://github.com/modelcontextprotocol/conformance)
 
 Verified project use: MCP provides tools, resources, prompts, discovery,
 authorization, and optional extensions. The 2026-07-28 release uses a stateless
@@ -234,11 +236,23 @@ endpoint, while receipt lookup worked only when the original run ID was known.
 The fixture explicitly did not inject a lost response. This is a single
 implementation observation, not an AWG reproduction or a protocol-wide result.
 
+The official security guidance is an additional implementation-review source,
+including confused-deputy and credential-boundary risks. The conformance suite
+is an implementation and compatibility validation candidate for the existing
+WordPress/MCP E2E path. Pin the runner build and the `2026-07-28` requirement
+set, and distinguish required, optional, pending, and known-failing checks.
+Scope scenarios to the endpoint's transport and authentication contract;
+incompatible prerequisites are verification gaps, not passing checks.
+Protocol conformance complements application-governance tests; neither a green
+CI exit with expected failures nor protocol tests alone establish AWG acceptance.
+
 ### WebMCP [B]
 
 - [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-11-13 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
+- [Web Platform Tests: WebMCP source](https://github.com/web-platform-tests/wpt/tree/master/webmcp)
+- [Web Platform Tests: WebMCP results dashboard](https://wpt.fyi/results/webmcp)
 - [Chrome WebMCP Imperative API](https://developer.chrome.com/docs/ai/webmcp/imperative-api)
 - [Chrome agent security considerations](https://developer.chrome.com/docs/agents/security)
 - [Chrome WebMCP tool security](https://developer.chrome.com/docs/ai/webmcp/secure-tools)
@@ -425,6 +439,13 @@ describe Blink behavior, including cancellation that leaves an unredeemed
 token usable. No continuation API is added to AWG; host lifecycle and resumed
 authorization remain compatibility candidates, not tested browser guarantees.
 
+The Web Platform Tests source is a native-host validation candidate for
+registration, event ordering, and cancellation. Record the test commit, browser
+build, and enabled features; select cases against the adopted API rather than
+assuming every test in the directory is a current specification requirement.
+The dashboard is a result source, not proof that AWG or every browser passes.
+No new browser run or replacement for the current helper tests is claimed here.
+
 ### A2A Protocol [B]
 
 - [A2A 1.0 specification](https://a2a-protocol.org/latest/specification/)
@@ -493,7 +514,64 @@ Project use: motivate organization metadata for input/output use, third-party
 provision, retention, rights, and review ownership. Technical metadata does not
 replace contract review.
 
-## 6. Security research [C]
+### Incident monitoring
+
+- [IPA: AI Security Bulletin](https://www.ipa.go.jp/digital/ai/security/ai-security-bulletin.html), latest listed issue: 2026-11-13; index reviewed: 2026-11-15
+
+Project use: discover incident and threat reports relevant to the Japan profile
+and deployment review. This is an official digest of other reports, not an
+independent reproduction of each incident. Follow its links to original
+disclosures and preserve vendor-observed and unverified limits before changing
+a threat claim, control mapping, or tested baseline.
+
+## 6. Security guidance, verification, and research
+
+### OWASP AISVS [B]
+
+- [AISVS 1.01 release](https://github.com/OWASP/AISVS/releases/tag/v1.01)
+- [AISVS 1.01 requirement source](https://github.com/OWASP/AISVS/tree/v1.01/1.01/en)
+
+Project use: published, testable security requirements for comparison with AWG
+controls and evidence, especially C9 (agentic orchestration), C10 (MCP), and C12
+(monitoring and logging). Cite versioned requirement IDs. Version 1.02 is
+development work, not the selected reference. A future control-to-test mapping
+is a validation candidate, not a claim of AISVS conformance or a replacement
+for AWG's acceptance procedure and underlying application-security checks.
+
+### OWASP Agent Control Standard [B]
+
+- [ACS project introduction](https://genai.owasp.org/resource/agent-control-standard-acs/)
+- [ACS release 0.1.4](https://github.com/GenAI-Security-Project/agent-control-standard/releases/tag/v0.1.4)
+
+Project use: compare runtime decision hooks, authorization boundaries, and
+audit semantics with AWG. The published 0.1.4 release changes ACS-Trace
+requirements while retaining specification/schema namespace 0.1.0. Pin a release
+or commit and relevant profile, not just the schema namespace. A Guardian's
+verdict is distinct from its enforced outcome. ACS-Core or a reference
+implementation does not establish AWG conformance, independent human approval,
+or complete bypass coverage; no ACS adapter is added from this review.
+
+### NIST agent-identity design tenets [C]
+
+- [Design Tenets for Agent Identity Management Systems](https://www.nist.gov/blogs/cybersecurity-insights/design-tenets-agent-identity-management-systems), published 2026-10-27
+
+Project use: compare delegated-authority attenuation, revocation, separation
+of reasoning from policy, deterministic access decisions, and independent
+evidence with AWG's architecture. This is an official NIST blog proposing
+design tenets, not a finalized Special Publication, certification, or selected
+agent-identity protocol. Reader comments remain separate, attributed evidence.
+
+### OWASP agentic-application security guidance [B]
+
+- [Securing Agentic Applications V2](https://genai.owasp.org/resource/securing-agentic-applications-v2/), published 2026-11-10
+
+Project use: a published review guide covering architecture, identity/access,
+runtime protection, supply chains, and assurance testing. Use it to identify
+review gaps alongside the versioned AISVS controls; its publication does not
+automatically add normative requirements, implementation dependencies, or an
+AWG acceptance result.
+
+### Prompt-injection benchmarks [C]
 
 - [AgentDojo: A Dynamic Environment to Evaluate Prompt Injection Attacks and Defenses for LLM Agents](https://arxiv.org/abs/2406.13352)
 - [WASP: Benchmarking Web Agent Security Against Prompt Injection Attacks](https://arxiv.org/abs/2504.18575)
@@ -526,9 +604,15 @@ Before a release, review:
 - WebMCP specification, implementation status, and approval-boundary work;
 - A2A specification changes;
 - Japan profile source versions;
+- OWASP AISVS releases, ACS release/profile changes, and agentic security guidance;
+- NIST agent-identity design guidance, keeping proposals and reader comments distinct;
+- official MCP conformance requirements and WebMCP Web Platform Tests;
+- IPA AI Security Bulletin updates, following material claims to original reports;
 - relevant prompt-injection and agent-security research.
 
 Any source-dependent normative statement should retain a version or review date.
+Monitoring a source is not adoption. Review material changes to the selected
+release or contract; do not turn every upstream edit into an AWG requirement.
 
 ### Review window: 2026-10-12 to 2026-10-18
 
@@ -658,3 +742,23 @@ Any source-dependent normative statement should retain a version or review date.
   checklist. Preserve partial verification and existing requirements.
 - Scope: mapping and evidence updates only. Retain draft.6; no new Release or
   public-site deployment is warranted by this review.
+
+### Source-discovery addendum: 2026-11-15
+
+- Add previously unlisted security-verification and runtime-control references:
+  published AISVS 1.01, ACS release 0.1.4, the October 27 NIST design-tenets blog,
+  and the November 10 OWASP practical guide. These are new AWG references, not
+  claims that all sources were first published in this review window.
+- Prioritize future AISVS control-to-test mapping and ACS responsibility-boundary
+  comparison. Published requirements, evolving control specifications, and
+  proposed architectural tenets retain their distinct evidence levels; no new
+  AWG normative adoption, adapter, or compliance claim follows automatically.
+- Add implementation/compatibility validation candidates for the existing paths:
+  the official MCP conformance suite at a pinned runner/requirement set, and
+  native WebMCP tests at a recorded browser/test revision. This review discovers
+  sources; it does not claim either suite was run or passed against AWG.
+- Add the IPA digest's November 13 issue as an incident-discovery source and
+  monitor future issues. Confirm material claims against their original
+  disclosures before using them as implementation or Japan-profile evidence.
+- Extend this document's Monitoring list accordingly. Runtime code, tested
+  baselines, acceptance status, and the draft.6 release remain unchanged.
