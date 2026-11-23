@@ -3,7 +3,7 @@
 **Mapping version:** Draft 0.1  
 **Target baseline:** WordPress 7.1+
 
-**Last reviewed:** 2026-11-15
+**Last reviewed:** 2026-11-24
 
 ## 1. Purpose
 
@@ -141,7 +141,7 @@ registration-time callback wrapper and a second security-sensitive execution
 path. Compatibility can be reconsidered as a separate adapter if demonstrated
 deployment demand outweighs that cost.
 
-The tested official MCP Adapter 0.6.1, 0.7.0, and 0.7.1 paths delegate
+The tested official MCP Adapter 0.6.1, 0.7.0, 0.7.1, and 0.7.2 paths delegate
 Ability-backed tools to `WP_Ability::check_permissions()` and
 `WP_Ability::execute()`. The same
 governance boundary therefore covers its permission probe and execution
@@ -160,12 +160,22 @@ internals nor a custom transport, so no implementation fork is added here. The
 0.7.0 sessionless acceptance run confirms that this boundary remains effective
 under exact MCP `2026-07-28` projection.
 
-Version 0.7.1 is the current tested reference baseline. It bounds stored
-initialization parameters to 4 KiB per session and returns `ability_not_found`
+Version 0.7.1 introduced the stored-session bounds retained in 0.7.2. It bounds
+stored initialization parameters to 4 KiB per session and returns `ability_not_found`
 for both missing and non-exposed Abilities. Treat that error as a safe refusal,
 not permission to bypass discovery or probe a private capability. The Adapter's
 storage limit protects its transport state; AWG must still bound and minimize
 its own evidence and workflow stores.
+
+Version 0.7.2 is the current tested Adapter baseline with WordPress 7.1.5.
+It prepares/validates input before Ability permission probes. Invalid input
+stops before callbacks and late `mcp_adapter_pre_tool_call` /
+`mcp_adapter_pre_prompt_get` filters; use early normalization rather than repair
+in those filters. The isolated fixture verifies direct/MCP normalized-input
+parity and one policy reservation despite repeated permission checks. Its
+separate synthetic gate does not extend the shipped site-summary allowlist.
+The current sessionless revision still requires its version header; 0.7.2's
+older-client compatibility fix does not widen AWG's protocol baseline.
 
 ### 4.2 WordPress 7.2 validation candidate
 
@@ -205,7 +215,7 @@ Development commit `8af9d90441` preserves REST result schema shape, including
 empty objects at the root and within lists, and disables `_fields`/`_embed`
 processing for the run route. Test these result shapes separately from MCP
 wire projection; do not infer one transport's compatibility from another's.
-Neither development change is claimed for the pinned WordPress 7.1.4 stack.
+Neither development change is claimed for the pinned WordPress 7.1.5 stack.
 
 The November 6 direct-probe clarification (`4110c7f0a3`) is superseded by
 [November 10 development commit `d30bfa8c80`](https://github.com/WordPress/wordpress-develop/commit/d30bfa8c80).
@@ -217,12 +227,23 @@ permission probe. Unreleased public `coerce_input()` is replaced by protected
 manual sequence as the integration contract. Verify that preparation failures
 reach neither permission nor execution callbacks and that probe/execute use
 the same effective action without double-counting budgets. The current
-reference uses neither `coerce_input()` nor `sanitize_input()` and retains 7.1.4;
+reference uses neither `coerce_input()` nor `sanitize_input()` and retains the 7.1 patch line;
 Beta 5 publication is not a new E2E acceptance result.
 
 Development commit `3fe7aba7db` also restores mandatory registered categories
 instead of an `uncategorized` fallback. The current reference already registers
 its category explicitly; no fallback or untested 7.2 compatibility claim follows.
+
+November 23 development commit
+[`9d7b7c2e3a`](https://github.com/WordPress/wordpress-develop/commit/9d7b7c2e3aef21b32cea66cc842a0c10337d6908)
+adds validation after sanitization when the input changes, including the
+validation filter. A future 7.2 test must reject values made invalid by trimming
+or casting before permission/execution, and verify filters see the effective
+value; unchanged input should not trigger redundant validation. The current
+7.1.5 normalization fixture does not test 7.2 sanitization. Development changes
+also reject empty users-query slugs/usernames and declare URI format for
+content-query links; validate those before exposing either query Ability.
+Neither RC 2 publication nor merged development code establishes AWG acceptance.
 
 ## 5. Ability metadata
 
@@ -380,6 +401,14 @@ checksums matched, and setup rejects a cached older core before installation.
 This refreshes the tested patch baseline without adopting 7.2 development
 semantics, changing the application permission boundary, or claiming any
 public-site update.
+
+On 2026-11-24, the local E2E accepted WordPress 7.1.5 / MCP Adapter 0.7.2.
+A synthetic fixture proves invalid input stops before permission/policy/execute,
+Core/MCP normalized-input parity, and one policy reservation per invocation.
+Application denial and current-revision header requirements remain effective.
+Core checksums match the official manifest. This result updates only the local
+patched baseline; OAuth, native browser behavior, and the live HTTPS site were
+not tested or deployed.
 
 ### Stage 2: Scoped write delegation
 

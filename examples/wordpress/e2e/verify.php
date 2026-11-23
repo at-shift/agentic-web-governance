@@ -28,14 +28,14 @@ require $wordpress_dir . '/wp-load.php';
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
 global $wp_version;
-assert_same( '7.1.4', $wp_version, 'WordPress version' );
+assert_same( '7.1.5', $wp_version, 'WordPress version' );
 assert_true( is_plugin_active( 'mcp-adapter/mcp-adapter.php' ), 'MCP Adapter is inactive.' );
 assert_true(
 	is_plugin_active( 'agentic-web-governance-reference/agentic-web-governance-reference.php' ),
 	'Reference plugin is inactive.'
 );
 $mcp_data = get_plugin_data( WP_PLUGIN_DIR . '/mcp-adapter/mcp-adapter.php', false, false );
-assert_same( '0.7.1', $mcp_data['Version'] ?? null, 'MCP Adapter version' );
+assert_same( '0.7.2', $mcp_data['Version'] ?? null, 'MCP Adapter version' );
 pass( 'Pinned WordPress and MCP Adapter versions are active' );
 
 $debug_log = WP_CONTENT_DIR . '/debug.log';
@@ -222,6 +222,67 @@ assert_false(
 );
 pass( 'Evidence proves one reservation per call and excludes raw input/output' );
 
+// Compare the real Core path with the real MCP probe/execute path. Only
+// synthetic input is stored in this isolated instrumentation option.
+$fixture_ability = 'agentic-web-governance/e2e-input';
+delete_option( 'awg_e2e_input_observations' );
+wp_set_current_user( $admin_user_id );
+$direct = wp_get_ability( $fixture_ability )->execute( array( 'count' => '2' ) );
+assert_same( array( 'count' => 2 ), $direct, 'Direct prepared result' );
+$direct_state = get_option( 'awg_e2e_input_observations', array() );
+assert_same( array( array( 'count' => 2 ) ), $direct_state['permission'] ?? null, 'Direct permission input' );
+assert_same( array( array( 'count' => 2 ) ), $direct_state['policy'] ?? null, 'Direct policy reservations' );
+wp_set_current_user( 0 );
+delete_option( 'awg_e2e_input_observations' );
+
+foreach ( array( new stdClass(), array( 'count' => array() ), array( 'count' => '0' ), array( 'count' => 6 ) ) as $index => $invalid_input ) {
+	$invalid = call_tool( $admin_auth, 200 + $index, 'mcp-adapter-execute-ability', array(
+		'ability_name' => $fixture_ability,
+		'parameters'   => $invalid_input,
+	) );
+	assert_true( true === ( $invalid['result']['isError'] ?? false ), 'Invalid fixture input was accepted.' );
+	wp_cache_delete( 'awg_e2e_input_observations', 'options' );
+	wp_cache_delete( 'notoptions', 'options' );
+	assert_same( array(), get_option( 'awg_e2e_input_observations', array() ), 'Invalid input reached permission, policy, or execution' );
+}
+pass( 'Invalid MCP input is rejected before permission, governance reservation, and execution' );
+
+$prepared = call_tool( $admin_auth, 210, 'mcp-adapter-execute-ability', array(
+	'ability_name' => $fixture_ability,
+	'parameters'   => array( 'count' => '2' ),
+) );
+assert_false( $prepared['result']['isError'] ?? true, 'Normalized fixture call failed.' );
+assert_same( $direct, $prepared['result']['structuredContent']['data'] ?? null, 'Direct/MCP prepared result parity' );
+wp_cache_delete( 'awg_e2e_input_observations', 'options' );
+wp_cache_delete( 'notoptions', 'options' );
+$prepared_state = get_option( 'awg_e2e_input_observations', array() );
+assert_true( count( $prepared_state['permission'] ?? array() ) >= 2, 'MCP permission probe and execute were not both observed.' );
+foreach ( $prepared_state['permission'] as $input ) {
+	assert_same( array( 'count' => 2 ), $input, 'Prepared MCP permission input' );
+}
+assert_same( array( array( 'count' => 2 ) ), $prepared_state['policy'] ?? null, 'One normalized MCP call reserves policy once' );
+assert_same( array( array( 'count' => 2 ) ), $prepared_state['execution'] ?? null, 'One normalized MCP execution' );
+pass( 'Core and MCP authorize the same normalized input with one governance reservation' );
+
+$prepared_denied = call_tool( $blocked_auth, 211, 'mcp-adapter-execute-ability', array(
+	'ability_name' => $fixture_ability,
+	'parameters'   => array( 'count' => '2' ),
+) );
+assert_true( true === ( $prepared_denied['result']['isError'] ?? false ), 'Normalized input bypassed application permission.' );
+wp_cache_delete( 'awg_e2e_input_observations', 'options' );
+$denied_state = get_option( 'awg_e2e_input_observations', array() );
+assert_true( count( $denied_state['permission'] ?? array() ) > count( $prepared_state['permission'] ), 'Blocked principal did not reach native permission.' );
+assert_same( $prepared_state['policy'], $denied_state['policy'] ?? null, 'Denied principal reserved policy' );
+assert_same( $prepared_state['execution'], $denied_state['execution'] ?? null, 'Denied principal executed' );
+pass( 'Prepared input cannot bypass the native permission denial' );
+
+// 0.7.2 relaxes omitted version headers only for negotiated older revisions.
+// The current sessionless contract must still reject a headerless request.
+$headerless = request( $admin_auth, array( 'jsonrpc' => '2.0', 'id' => 220, 'method' => 'tools/list' ), AWG_E2E_PROTOCOL, false );
+assert_same( 400, $headerless['status'], 'Current revision without version header' );
+assert_true( empty( $headerless['headers']['mcp-session-id'] ), 'Headerless refusal created a session.' );
+pass( 'MCP 2026-07-28 still requires its version header after the Adapter compatibility fix' );
+
 $debug_output = (string) file_get_contents( $debug_log );
 foreach ( array( 'PHP Fatal error', 'PHP Parse error', 'PHP Warning', 'PHP Notice', 'PHP Deprecated' ) as $php_problem ) {
 	assert_false( str_contains( $debug_output, $php_problem ), 'WordPress debug log contains: ' . $php_problem );
@@ -273,7 +334,7 @@ function execute_reference_ability( array $auth, int $id ): array {
 	);
 }
 
-function request( ?array $auth, array $payload, string $protocol = AWG_E2E_PROTOCOL ): array {
+function request( ?array $auth, array $payload, string $protocol = AWG_E2E_PROTOCOL, bool $include_version_header = true ): array {
 	$method = $payload['method'] ?? null;
 	if ( ! is_string( $method ) ) {
 		fail( 'MCP request method is missing.' );
@@ -297,9 +358,11 @@ function request( ?array $auth, array $payload, string $protocol = AWG_E2E_PROTO
 	$headers = array(
 		'Accept: application/json, text/event-stream',
 		'Content-Type: application/json',
-		'MCP-Protocol-Version: ' . $protocol,
 		'Mcp-Method: ' . $method,
 	);
+	if ( $include_version_header ) {
+		$headers[] = 'MCP-Protocol-Version: ' . $protocol;
+	}
 	if ( in_array( $method, array( 'tools/call', 'resources/read', 'prompts/get' ), true ) ) {
 		$name_field = 'resources/read' === $method ? 'uri' : 'name';
 		$headers[] = 'Mcp-Name: ' . (string) ( $params[ $name_field ] ?? '' );

@@ -1,8 +1,9 @@
 # OWASP AISVS 1.01 Test Evidence Map
 
 **Status:** Review aid; no AISVS conformance claim  
-**Last reviewed:** 2026-11-15  
-**AWG code/test snapshot:** `494f2edc841ed920299c1bb5694f3c14e9a51e49`  
+**Last reviewed:** 2026-11-24  
+**Initial AWG code/test snapshot:** `494f2edc841ed920299c1bb5694f3c14e9a51e49`  
+**Additive review:** 2026-11-24, patch-baseline/input E2E changes based on `177fcbc`  
 **AISVS source:** tag `v1.01`, commit `3ae3af45c363467b8ad823ef79219236e67ca22f`
 
 ## 1. Scope and interpretation
@@ -73,8 +74,8 @@ snapshot. All unit/fixture assertions must be rerun when their code changes.
 | B-OUTCOMES | [WebMCP tests](../tests/webmcp-adapter-javascript.mjs): the `proposalStatus` / `executionStatus` loop, `outputSchema`, and `new Ajv2020` | Four AWG envelopes are checked by Ajv in the test, and the host schema is copied. The helper does not install a runtime output validator. |
 | B-GATES | Same file: blocks using `POLICY_DENIED`, `WRITE_REQUIRES_REVIEW`, and `INPUT_REJECTED_BY_APPLICATION` | Denied/pending policy and rejected input do not dispatch the fake kernel. Not a real browser security evaluation. |
 | B-CANCEL | Same file: `Cancelled during policy evaluation`, `proposal-dispatched`, and pre-aborted-signal blocks | Cancellation before dispatch stops it; a completed result after dispatch is not falsely converted to rollback. No inference/process kill is implemented. |
-| H-WP | [Local E2E verifier](../examples/wordpress/e2e/verify.php) and [acceptance boundary](../examples/wordpress/e2e/README.md) | Harness covers authenticated/anonymous discovery, hidden/missing Ability refusal, native permission denial, ten calls then rate denial, bounded evidence, and oversized initialization. It uses loopback HTTP and Application Passwords, not OAuth. Not rerun for this map; November 1 acceptance is historical. |
-| H-SUPPLY | [E2E setup](../examples/wordpress/e2e/setup.sh) | Inspected archive-digest and exact-version checks. Not a malicious-archive or signer-verification test, nor a new installation run. |
+| H-WP | [Local E2E verifier](../examples/wordpress/e2e/verify.php) and [acceptance boundary](../examples/wordpress/e2e/README.md) | Harness covers authenticated/anonymous discovery, hidden/missing Ability refusal, native permission denial, ten calls then rate denial, bounded evidence, and oversized initialization. It uses loopback HTTP and Application Passwords, not OAuth. Rerun November 24 on WP 7.1.5 / Adapter 0.7.2: synthetic invalid input stops before callbacks; Core/MCP normalized input agrees with one policy reservation; headerless current revision is refused. No prompt/OAuth or native-browser coverage. |
+| H-SUPPLY | [E2E setup](../examples/wordpress/e2e/setup.sh) | Inspected archive-digest and exact-version checks. November 24 installation and official Core checksum verification passed. Not a malicious-archive or signer-verification test. |
 
 ## 3. C9 mapping
 
@@ -148,7 +149,7 @@ actual installed adapter and deployment, not trust in a release number.
 | v1.01-C10.3.6 | 2 | Header-policy revision gate | Not present | No AWG policy-enforcing MCP intermediary. |
 | v1.01-C10.4.1 | 1 | Model-facing response validation | Not present | No MCP client/model injection pipeline; B-OUTCOMES validates different, WebMCP fixtures. |
 | v1.01-C10.4.2 | 1 | Response injection screening | Not present | No MCP-consuming model or screening evaluation. |
-| v1.01-C10.4.3 | 1 | Call parameter rejection | Upstream | H-WP checks oversized initialization, not unknown/oversized tool-call arguments. |
+| v1.01-C10.4.3 | 1 | Call parameter rejection | Upstream | H-WP now checks missing/wrong-type/out-of-range synthetic input before callbacks; unknown fields and oversized tool-call arguments remain untested. |
 | v1.01-C10.4.4 | 2 | Wire/Ability schema rejection | Upstream | Existing happy-path result assertions do not establish strict MCP schema rejection. |
 | v1.01-C10.4.5 | 2 | Transport payload bounds | Partial | H-WP proves one 4-KiB initialization-store limit, not total request/result limits for all transports. |
 | v1.01-C10.4.6 | 2 | Signed response freshness | Upstream | No signed response nonce/timestamp verification; action hashes are a different mechanism. |
@@ -215,10 +216,10 @@ credential issuer, independent reviewer, or durable store.
 |---|---|---|---|
 | N1: mutable-gate failure matrix | C9.1.2, C9.5.1, C9.5.3, C9.5.6 | Isolate permission, delegation, budget, precondition, and policy failures at each applicable phase; include exceptions/malformed results and revocation after proposal. Assert no executor call and the correct minimized denial evidence. | Extend the kernel tests without treating mocked checks as real grant/budget services. |
 | N2: effect-then-failure recovery | C9.2.8, C12.4.2 | Make an executor record its effect before throwing; prove retry cannot create a second effect, and the caller retains uncertainty. Test original-result lookup separately when a real result store exists. | K-REPLAY currently throws before an effect; in-process concurrency does not prove crash/restart or distributed safety. |
-| N3: context and probe accounting | C9.3.9, C9.5.1, C9.5.6 | Vary principal, capability, input, and context independently; no cached allow crosses the boundary and one external invocation spends one budget. Include native probe/execute input parity before any 7.2 upgrade. | W-CONTEXT changes only client identity; storage-tenant isolation remains a separate integration task. |
+| N3: context and probe accounting | C9.3.9, C9.5.1, C9.5.6 | Vary principal, capability, input, and context independently; no cached allow crosses the boundary and one external invocation spends one budget. November 24 H-WP verifies native Core/MCP normalized-input parity on 7.1.5 / 0.7.2. Changed-value sanitization/revalidation still needs actual 7.2 tests. | W-CONTEXT changes only client identity; storage-tenant isolation remains a separate integration task. |
 | N4: native schema/transport negatives | C9.3.2, C10.3.3, C10.4.3-C10.4.5, C10.4.12-C10.4.15 | Against test-only fixtures, exercise wrong/oversized arguments and results, hostile Origin/Host separately, mismatched encoded headers, bounded validation, and rejected external/unresolved schema references. Invalid input must stop before callback; invalid output after dispatch must preserve effect uncertainty. Reject unsafe schema fetches and prevent credential/data leaks. | Inspect the installed Adapter's mechanism and prerequisites first; use the pinned official suite where applicable. App Password tests do not establish OAuth conformance. |
 | N5: evidence failure boundaries | C12.1.1, C12.1.2, C12.4.2 | Exercise corrupt/unavailable stores and denied/failed executions; verify correct event meaning, stable correlation, field limits, and absence of proof/secrets across success and failure paths. | W-EVIDENCE tests decision-store failure and projection, not independent durable audit integrity or complete inference telemetry. |
-| N6: native WebMCP behavior | C9.3.2; application boundary review | Record a browser build, flags, and WPT revision; verify schema/result behavior, lifecycle, cancellation, and document scope on the existing helper. | This is WebMCP compatibility evidence, not a C10 MCP-conformance pass or a new continuation adapter. |
+| N6: native WebMCP behavior | C9.3.2; application boundary review | Record a browser build, flags, and WPT revision; verify schema/result behavior, lifecycle, cancellation, and document scope on the existing helper. | Include opaque Tool identity, stale-handle refusal, nullable fields, and source/clone behavior after PR 348. WPT e572c0e06ac3 is reviewed, not run. This is WebMCP compatibility evidence, not a C10 pass or continuation adapter. |
 
 N1-N3 are the first local test candidates. N4-N6 need the actual upstream/host
 environment and carefully isolated fixtures. Document actual assertions and
@@ -254,7 +255,9 @@ Local checks completed on 2026-11-15:
 For this map, rerun `git diff --check` and `npm test`. The latter covers the
 existing kernel, action/lifecycle fixtures, WordPress unit boundary, and fake
 WebMCP host. It does not run WordPress E2E, WPT, the official MCP conformance
-suite, or an AISVS audit. No new E2E `ACCEPTED` result is established here.
+suite, or an AISVS audit. Separately, the November 24 isolated WordPress E2E
+returned `ACCEPTED` for 7.1.5 / 0.7.2. This bounded result does not change any
+matrix state or establish an AISVS pass. N3/N4 gain only the input subset above.
 
 For an update:
 

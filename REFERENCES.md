@@ -1,6 +1,6 @@
 # References and Evidence Map
 
-**Last reviewed:** 2026-11-15
+**Last reviewed:** 2026-11-24
 
 ## 1. Evidence levels
 
@@ -20,7 +20,7 @@ An evidence level is not a security rating or endorsement.
 ### WordPress Abilities API [A]
 
 - [Abilities API handbook](https://developer.wordpress.org/apis/abilities-api/)
-- [WordPress 7.1.4 security release](https://wordpress.org/news/2026/10/wordpress-7-1-4/)
+- [WordPress 7.1.5 security release](https://wordpress.org/news/2026/11/wordpress-7-1-5-release/)
 - [Abilities API hooks](https://developer.wordpress.org/apis/abilities-api/hooks/)
 - [WordPress 7.1 execution lifecycle filters](https://make.wordpress.org/core/2026/07/29/new-execution-lifecycle-filters-for-the-abilities-api-in-wordpress-7-1/)
 - [`WP_Ability::execute()` reference](https://developer.wordpress.org/reference/classes/wp_ability/execute/)
@@ -79,14 +79,26 @@ category; neither a baseline upgrade nor a callback wrapper is added here.
 November 10 development commit `d30bfa8c80` supersedes the manual preparation
 sequence with public `prepare_input()`, used by execution and REST permission
 probes. It replaces unreleased `coerce_input()` with protected sanitization.
-Update the 7.2 compatibility candidate accordingly; Beta 5's publication does
-not establish AWG acceptance or change the pinned 7.1.4 baseline.
+Update the 7.2 compatibility candidate accordingly; Beta 5's publication
+did not establish AWG acceptance or change the then-pinned 7.1.4 baseline.
+
+On November 24, the isolated E2E accepted WordPress 7.1.5 (November 18 security
+release) with official MCP Adapter 0.7.2. Setup pins both archive digests;
+Core file checksums were separately verified. This supersedes the local tested
+patch baseline, not the historical deployed HTTPS result. WordPress 7.2 RC 2
+is prerelease work. November 23 development commit
+[`9d7b7c2e3a`](https://github.com/WordPress/wordpress-develop/commit/9d7b7c2e3aef21b32cea66cc842a0c10337d6908)
+revalidates input changed by sanitization before callbacks; keep that in the
+7.2 validation candidate rather than attributing it to 7.1.5.
 
 ### Official WordPress MCP Adapter [A]
 
 - [WordPress MCP Adapter repository](https://github.com/WordPress/mcp-adapter)
 - [MCP Adapter 0.7.0 release](https://github.com/WordPress/mcp-adapter/releases/tag/v0.7.0)
 - [MCP Adapter 0.7.1 release](https://github.com/WordPress/mcp-adapter/releases/tag/v0.7.1)
+- [MCP Adapter 0.7.2 release](https://github.com/WordPress/mcp-adapter/releases/tag/v0.7.2)
+- [MCP Adapter input preparation fix](https://github.com/WordPress/mcp-adapter/pull/444)
+- [MCP Adapter input migration notes](https://github.com/WordPress/mcp-adapter/blob/v0.7.2/docs/migration/ability-input-preparation.md)
 - [MCP Adapter session-storage fix](https://github.com/WordPress/mcp-adapter/pull/386)
 - [MCP Adapter unavailable-Ability handling](https://github.com/WordPress/mcp-adapter/pull/385)
 - [MCP Adapter 0.7.0 migration guide](https://github.com/WordPress/mcp-adapter/blob/trunk/docs/migration/v0.7.0.md)
@@ -119,6 +131,15 @@ session writes and non-exposed-Ability refusal without metadata disclosure.
 These bounded upstream stores support availability and privacy; they do not
 replace AWG evidence, budgets, or application authorization. Historical HTTPS
 acceptance does not establish that a deployed installation has been patched.
+
+Released 0.7.2 prepares and validates Ability input before permission probes.
+Invalid input stops before permission and late pre-tool/pre-prompt filters;
+normalization belongs earlier, such as `wp_ability_normalize_input`. The
+November 24 local E2E verifies invalid-input refusal, direct/MCP normalized
+input parity, one governance reservation per call, and native permission
+denial. Its older-client header fix does not relax `2026-07-28` requirements;
+a headerless current-revision request is still refused. These tests do not
+establish prompt-path coverage, OAuth conformance, or production deployment.
 
 ### Automattic Agents API [B]
 
@@ -185,6 +206,8 @@ proprietary permanent agent identity model.
 - [MCP release-cycle announcement](https://blog.modelcontextprotocol.io/posts/mcp-release-cycle/)
 - [MCP experimental file-transfer introduction](https://blog.modelcontextprotocol.io/posts/exploring-file-uploads-and-downloads-in-mcp/)
 - [MCP issue 3394: November 12 retry/recovery observation](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/3394#issuecomment-6833074067)
+- [MCP SEP-3415: Events extension](https://modelcontextprotocol.io/seps/3415-events-extension)
+- [MCP PR 3516: current/draft documentation corrections](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3516)
 - [MCP Security Best Practices, 2026-07-28](https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices)
 - [Official MCP conformance suite](https://github.com/modelcontextprotocol/conformance)
 
@@ -246,9 +269,21 @@ incompatible prerequisites are verification gaps, not passing checks.
 Protocol conformance complements application-governance tests; neither a green
 CI exit with expected failures nor protocol tests alone establish AWG acceptance.
 
+November 19 merged SEP-3415 is Final, but the optional Events extension is
+Beta, not Stable or core. It uses the existing MCP principal and treats event
+payloads as untrusted. A future integration needs subscription authorization,
+replay/cursor, webhook verification, and outcome checks; AWG has no Events
+adapter. PR 3516 corrects existing authorization examples, error descriptions,
+and capability negotiation without selecting a new wire revision. Invalid
+tool arguments are tool errors (`isError`), distinct from malformed request
+errors. Its auth-extension corrections require token-endpoint exchange and
+issuer-bound client assertions; AWG's Application Password E2E does not test
+those OAuth roles. PR 3552 removes deprecated features from current overview
+examples. No schema-shape or authentication implementation migration is claimed.
+
 ### WebMCP [B]
 
-- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-11-13 snapshot
+- [WebMCP Draft Community Group Report](https://webmachinelearning.github.io/webmcp/), 2026-11-23 snapshot
 - [WebMCP repository](https://github.com/webmachinelearning/webmcp)
 - [Browser and Agent Implementation Status](https://github.com/webmachinelearning/webmcp/blob/main/implementation-status.md)
 - [Web Platform Tests: WebMCP source](https://github.com/web-platform-tests/wpt/tree/master/webmcp)
@@ -294,7 +329,7 @@ CI exit with expected failures nor protocol tests alone establish AWG acceptance
 - [Pull request 337: concurrency and detached-document algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/337)
 - [Pull request 345: inactive-document unregistration and registration checks](https://github.com/webmachinelearning/webmcp/pull/345)
 - [Pull request 347: duplicate-name recheck after schema serialization](https://github.com/webmachinelearning/webmcp/pull/347)
-- [Pull request 348: proposed UUID-backed Tool interface](https://github.com/webmachinelearning/webmcp/pull/348)
+- [Pull request 348: adopted Tool interface](https://github.com/webmachinelearning/webmcp/pull/348)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
@@ -336,8 +371,9 @@ discussion is therefore proposal evidence for a possible future API, not a
 current WebMCP protocol condition or AWG dependency.
 
 Merged pull requests 251 and 279 specify that `executeTool()` receives a
-discovered `RegisteredTool` and a structured JavaScript input value directly,
-while `RegisteredTool.inputSchema` is exposed as a parsed JavaScript object.
+discovered handle and a structured JavaScript input value directly. Adopted
+PR 348 now represents that handle as `Tool`; `inputSchema` is a parsed object
+or null when absent.
 Chrome's September 21 documentation likewise requires a serializable object and
 deprecates JSON-stringified input arguments from Chrome 155. A future AWG
 WebMCP adapter should therefore pass a serializable input object, treat the
@@ -388,11 +424,13 @@ registration rechecks, and duplicate-name races during schema serialization.
 AWG leaves these platform checks to the host and propagates registration
 rejection without creating a bypass registry. Chrome's October 16 imperative
 guide also records `debugging` as available from Chrome 156; browser-specific
-availability does not make the hint an authorization control. Pull request 348
-remains open: its UUID-backed `Tool` interface would change discovery handles
-and cloning/serialization assumptions. It is an implementation-review candidate
-if adopted, not the current `RegisteredTool` contract or a reason to migrate
-the reference adapter now.
+availability does not make the hint an authorization control. PR 348 merged
+November 19: discovery returns opaque `Tool` handles tied to a specific
+registration, not `RegisteredTool` dictionaries. The current interface exposes
+`source`; absent schemas/annotations are nullable. Consumers must not rebuild
+handles by name, spread/JSON-serialize them as dictionaries, or structured-clone
+them. The existing registration-only helper needs no consumer-handle migration;
+native handle identity and serialization remain validation candidates.
 
 Merged PR 334 separates general browser-agent risks from controls a WebMCP API
 can enforce and links agent/tool security guidance. Site-authored descriptions
@@ -446,6 +484,13 @@ assuming every test in the directory is a current specification requirement.
 The dashboard is a result source, not proof that AWG or every browser passes.
 No new browser run or replacement for the current helper tests is claimed here.
 
+Chrome's November 20 imperative guide documents optional `outputSchema` from
+Chrome 159. This is version-scoped documentation, not an AWG browser test.
+WPT commit [`e572c0e06ac3`](https://github.com/web-platform-tests/wpt/commit/e572c0e06ac3)
+renames Tool `window` to `source`; record it when selecting a native-browser
+suite. WebMCP main also links `@w3c/webmcp-polyfill`; a linked package is not a
+reason to add a dependency or equate polyfill tests with native behavior.
+
 ### A2A Protocol [B]
 
 - [A2A 1.0 specification](https://a2a-protocol.org/latest/specification/)
@@ -498,6 +543,12 @@ with external environments.
 Project use: track governance concerns and source versions. A detailed control
 mapping requires subject-matter review before being presented as authoritative.
 
+The [IPA expert-group page](https://www.ipa.go.jp/digital/ai/expert-group-on-aigfb.html),
+updated November 18, records deliberations on future guideline updates. It is
+an additional monitoring source, not a replacement edition or a new binding
+control. The selected published business-guidance reference remains 1.2;
+closed meeting materials and reader commentary are not adopted requirements.
+
 ### Personal information
 
 - [Personal Information Protection Commission: Alert on the Use of Generative AI Services](https://www.ppc.go.jp/news/careful_information/230602_AI_utilize_alert/)
@@ -516,7 +567,7 @@ replace contract review.
 
 ### Incident monitoring
 
-- [IPA: AI Security Bulletin](https://www.ipa.go.jp/digital/ai/security/ai-security-bulletin.html), latest listed issue: 2026-11-13; index reviewed: 2026-11-15
+- [IPA: AI Security Bulletin](https://www.ipa.go.jp/digital/ai/security/ai-security-bulletin.html), latest listed issue: 2026-11-13; index reviewed: 2026-11-24
 
 Project use: discover incident and threat reports relevant to the Japan profile
 and deployment review. This is an official digest of other reports, not an
@@ -543,11 +594,14 @@ application-security checks.
 ### OWASP Agent Control Standard [B]
 
 - [ACS project introduction](https://genai.owasp.org/resource/agent-control-standard-acs/)
-- [ACS release 0.1.4](https://github.com/GenAI-Security-Project/agent-control-standard/releases/tag/v0.1.4)
+- [ACS release 0.1.5](https://github.com/GenAI-Security-Project/agent-control-standard/releases/tag/v0.1.5), commit `e2519b99ef0fc9bca7ee6d37e0ac0aa0234f1780`
 
 Project use: compare runtime decision hooks, authorization boundaries, and
-audit semantics with AWG. The published 0.1.4 release changes ACS-Trace
-requirements while retaining specification/schema namespace 0.1.0. Pin a release
+audit semantics with AWG. Release 0.1.5 changes HMAC derivation, response binding,
+and decision-failure audit semantics while retaining namespace 0.1.0. Shared
+HMAC keys do not establish independent attribution. Experimental ML-DSA signing
+and gateway ASK approval are lab conventions, not complete assurance claims.
+Pin a release
 or commit and relevant profile, not just the schema namespace. A Guardian's
 verdict is distinct from its enforced outcome. ACS-Core or a reference
 implementation does not establish AWG conformance, independent human approval,
@@ -605,7 +659,7 @@ Before a release, review:
 - MCP specification and extension changes;
 - WebMCP specification, implementation status, and approval-boundary work;
 - A2A specification changes;
-- Japan profile source versions;
+- Japan profile source versions and the IPA business-guideline expert-group updates;
 - OWASP AISVS releases, ACS release/profile changes, and agentic security guidance;
 - NIST agent-identity design guidance, keeping proposals and reader comments distinct;
 - official MCP conformance requirements and WebMCP Web Platform Tests;
@@ -769,3 +823,41 @@ release or contract; do not turn every upstream edit into an AWG requirement.
   identified assertions and missing proof. Record bounded next tests separately
   from new integration prerequisites and absent subsystems. This is a scoped
   review of existing code/tests, not 98 passes or a new acceptance result.
+
+
+### Review window: 2026-11-15 to 2026-11-24
+
+- Adopted WebMCP change: PR 348 replaces discovered dictionaries with opaque
+  registration-bound `Tool` handles. Update the mapping and native validation
+  candidate; the registration-only helper uses no discovery/execute wrapper.
+  November 23 draft and November 20 Chrome guide reviewed. WPT `e572c0e06ac3`
+  follows the `source` rename; no WPT or native-browser pass is claimed.
+  PRs 333/376 and result-serialization issue 361 remain open.
+- Published stable patches: pin WordPress 7.1.5 / official MCP Adapter 0.7.2.
+  The isolated E2E on November 24 returned `ACCEPTED`, including invalid input
+  before callbacks, direct/MCP normalization parity, one policy reservation,
+  native denial, and mandatory current-revision headers. Official Core file
+  checksums match. This is local integration proof, not a public-site update.
+- Implementation/compatibility candidates: 7.2 development revalidates input
+  changed by sanitization (`9d7b7c2e3a`), rejects empty users-query selectors,
+  and declares content-query link format. Test those only before actual 7.2
+  adoption; no query Ability is added to AWG's allowlist. RC 2 is not stable.
+- MCP: Events has a Final SEP and Beta extension contract. Record future
+  subscription/payload/replay boundaries without creating an absent adapter.
+  Current/draft documentation corrections preserve the 2026-07-28 baseline;
+  auth-extension examples and tool-error classification are clarified.
+  Official conformance main remains `96a6f9478b7f` (November 10); not run here.
+- Additional sources: ACS 0.1.5 has substantive signing/binding/audit changes
+  despite unchanged namespace 0.1.0. Compare those boundaries before a future
+  integration; AWG has no ACS adapter. AISVS remains v1.01 at the selected
+  commit. Refresh the evidence map only for observed tests; no row becomes a
+  full control pass. OWASP's November 10 guide and NIST's October 27 design
+  tenets yield no newly adopted requirement; reader comments stay separate.
+- Agents API remains 0.16.1 with no new main commits; Agent User is open.
+  A2A changes are documentation links. IPA's bulletin still lists November 13;
+  no new incident claim is promoted. The November 18 business-guideline
+  expert-group page is deliberation tracking, not a new guideline edition.
+- Japan/research: AISI still lists evaluation guide 1.20; PPC and all six cited
+  arXiv revision histories yield no confirmed control change. METI landing
+  pages returned HTTP 403 on retry; official indexed sources identify guideline
+  1.2 and the 2025 checklist, so full direct verification remains partial.

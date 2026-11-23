@@ -7,8 +7,8 @@ implementations rather than test doubles.
 
 ## Pinned stack
 
-- WordPress 7.1.4 (October 28 security release)
-- Official WordPress MCP Adapter 0.7.1
+- WordPress 7.1.5 (November 18 security release)
+- Official WordPress MCP Adapter 0.7.2
 - MCP protocol `2026-07-28` sessionless HTTP requests
 - PHP 8.3+
 - MySQL 8.4+
@@ -27,7 +27,7 @@ installation. The web server listens on `127.0.0.1:8081`.
 
 `verify.php` passes only when all of these statements are true:
 
-1. The running application is exactly WordPress 7.1.4 with MCP Adapter 0.7.1.
+1. The running application is exactly WordPress 7.1.5 with MCP Adapter 0.7.2.
 2. An unauthenticated sessionless MCP discovery request is rejected.
 3. An authenticated client can list the default tools without creating a
    legacy MCP session.
@@ -49,6 +49,18 @@ installation. The web server listens on `127.0.0.1:8081`.
 12. A test-only non-exposed Ability is registered but absent from discovery;
     it and an unknown Ability are refused with `ability_not_found` at the
     application boundary, and no private fixture metadata reaches the caller.
+
+13. A synthetic input fixture rejects missing, wrong-type, and out-of-range
+    arguments before permission, governance policy, or execution callbacks.
+14. Direct Core and MCP executions receive the same normalized integer input;
+    repeated MCP permission probes cause one policy reservation and one execution.
+15. Normalized input cannot bypass native permission denial, and a current
+    `2026-07-28` request without its version header still receives HTTP 400.
+
+The input fixture uses synthetic observations and a separate test gate, not the
+shipped allowlist or production audit store. It demonstrates the 0.7.2 tool
+path, not prompt coverage, 7.2 sanitization, hostile transport conformance,
+or general runtime schema bounds.
 
 The test-only must-use plugin lowers the MCP Adapter's transport and execute
 wrapper baselines from `read` to the `exist` pseudo-capability only after
@@ -92,3 +104,15 @@ move `runtime/wordpress` to a private backup, and rerun setup. Keep
 `runtime/credentials.json` private and in place so setup can reuse the isolated
 database. The installer and acceptance verifier both check the exact core
 version; a historical `ACCEPTED` run is not evidence for a newly pinned stack.
+
+## Latest local verification: 2026-11-24 (Asia/Tokyo)
+
+WordPress 7.1.5 / MCP Adapter 0.7.2 returned `ACCEPTED` with PHP 8.3.36 and
+MySQL 8.4.9. All 3,783 official Core checksums matched; the downloaded Adapter
+ZIP matched its GitHub asset SHA-256. Setup's cached-older-Core refusal was
+also verified. The review used a temporary checkout and a separate database
+and account on local MySQL to preserve the existing runtime. Installer defaults
+remain unchanged. No public WordPress installation was modified.
+
+The new input cases cover the default Adapter's tool/execute-Ability route;
+there is no prompt-path, OAuth, native WebMCP, or WordPress 7.2 acceptance claim.

@@ -5,15 +5,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORDPRESS_DIR="${SCRIPT_DIR}/runtime/wordpress"
 DOWNLOAD_DIR="${SCRIPT_DIR}/runtime/downloads"
-WORDPRESS_VERSION="7.1.4"
+WORDPRESS_VERSION="7.1.5"
 WORDPRESS_ARCHIVE="${DOWNLOAD_DIR}/wordpress-${WORDPRESS_VERSION}.tar.gz"
-MCP_VERSION="0.7.1"
+MCP_VERSION="0.7.2"
 MCP_ARCHIVE="${DOWNLOAD_DIR}/mcp-adapter-${MCP_VERSION}.zip"
 
 WORDPRESS_URL="https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz"
-WORDPRESS_SHA256="881e53a4681ff2cd911651b11cccdede5ae477ddf0765af5d6a1a8b219a1d835"
+WORDPRESS_SHA256="053857d980eaee8702c617c685948becb9be2523ba0dcbc98e4dbb2300367c79"
 MCP_URL="https://github.com/WordPress/mcp-adapter/releases/download/v${MCP_VERSION}/mcp-adapter.zip"
-MCP_SHA256="c8bc28f83d3c39beffa2add4f6becc0b1ae54097df433697d1dbe6520a80d769"
+MCP_SHA256="baab734f26bd347a87947d141bb0728a8594ab7f17af03d2ae2e95e31d828b5b"
 PHP_BIN="${AWG_E2E_PHP:-php}"
 
 if ! PHP_BIN="$(command -v "${PHP_BIN}")"; then

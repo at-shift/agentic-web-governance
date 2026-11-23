@@ -2,7 +2,7 @@
 
 **Mapping version:** Draft 0.1  
 **Protocol baseline:** MCP 2026-07-28  
-**Last reviewed:** 2026-11-15
+**Last reviewed:** 2026-11-24
 
 ## 1. Purpose
 
@@ -30,8 +30,8 @@ project rather than ship a parallel MCP server.
 ### 2.1 Extension maturity and compatibility
 
 Final Process [SEP-3392](https://modelcontextprotocol.io/seps/3392-extension-lifecycle)
-defines Experimental, Beta, and Stable stages. Skills and Tasks are currently
-Beta; Final SEP status does not imply Stable extension behavior or complete
+defines Experimental, Beta, and Stable stages. Skills, Tasks, and Events are
+currently Beta; Final SEP status does not imply Stable extension behavior or complete
 SDK support. Beta contracts may change incompatibly. Before adding an
 integration, record its core revision and exact extension specification, and
 verify schema, negotiation, outcome, and authorization compatibility. Stable
@@ -42,6 +42,22 @@ also documents initialization-based negotiation used by older implementations.
 That guidance does not modify released schemas or expand this mapping's
 2026-07-28 baseline. No Tasks, Skills, or legacy negotiation adapter is added
 merely because a capability appears in a support matrix.
+
+[Final SEP-3415](https://modelcontextprotocol.io/seps/3415-events-extension),
+merged November 19, specifies the optional Beta Events extension for MCP
+2026-07-28 and later. Subscription delivery carries untrusted payloads under
+the same application principal; an event is not a new permission grant or a
+terminal result. Future integrations must test subscription authorization,
+cursor/replay handling, and signed webhook delivery where used. No event
+runtime or adapter is present in AWG.
+
+Merged [PR 3516](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/3516)
+corrects examples and error descriptions in the current/draft documentation:
+invalid tool arguments use `isError`, while malformed call requests use a
+protocol error. Auth-extension examples correct token-endpoint exchanges and
+issuer-bound client assertions. The reference uses Application Passwords and
+implements no OAuth issuer/client role, so those remain integration candidates,
+not authentication coverage from its local E2E.
 
 The [November 11 release-cycle announcement](https://blog.modelcontextprotocol.io/posts/mcp-release-cycle/)
 targets March 30, 2027 under a six-month cadence. This is release planning,

@@ -1,8 +1,8 @@
 # WebMCP Mapping
 
 **Mapping version:** Draft 0.1  
-**Upstream snapshot:** 2026-11-13 Draft Community Group Report, repository reviewed 2026-11-15  
-**Last reviewed:** 2026-11-15
+**Upstream snapshot:** 2026-11-23 Draft Community Group Report, repository reviewed 2026-11-24  
+**Last reviewed:** 2026-11-24
 
 ## 1. Purpose
 
@@ -45,17 +45,17 @@ registers on the supplied document and implements no discovery wrapper; native
 document-lifecycle and discovery tests remain compatibility candidates.
 
 The `executeTool()` caller-facing contract accepts a discovered
-`RegisteredTool` and a JavaScript input object, rejects non-object values, and
+`Tool` handle and a JavaScript input object, rejects non-object values, and
 serializes the object for transfer to the tool's document. The discovered
-`RegisteredTool.inputSchema` is exposed as a parsed JavaScript object. Chrome's
+`Tool.inputSchema` is a parsed JavaScript object or null when absent. Chrome's
 documented transition deprecates JSON-stringified input from Chrome 155. An
 adapter therefore SHOULD pass a serializable object directly and MUST NOT
 depend on pre-stringified arguments or schema values as its normal path. The
 current draft treats an omitted or `undefined` input as an empty object; this
 default does not satisfy any required application fields or reduce validation.
 
-Merged PR 254 adds optional `outputSchema` to `ModelContextTool` and
-`RegisteredTool`, with serialization at registration and a parsed deep copy
+Merged PR 254 added optional `outputSchema`; after PR 348 it is declared on
+`ModelContextTool` and exposed on `Tool`, serialized at registration and parsed
 at discovery. The output is expected to match the schema and an agent may
 reject a mismatch; this does not establish universal browser-side validation.
 The reference helpers forward a cloned schema only when supplied. It must
@@ -398,11 +398,21 @@ created during serialization must not be overwritten. The reference adapter
 awaits the host's registration promise and propagates rejection; it does not
 emulate platform registration or treat discovery as an authority grant.
 
-PR 348 proposes replacing `RegisteredTool` dictionaries with a UUID-backed
-`Tool` interface. It remains open on 2026-11-15. If adopted, review tool-handle
-identity, nullable schema/annotation fields, and the proposed restrictions on
-spreading, JSON serialization, and structured cloning. No such migration is
-required or claimed by the current adapter.
+PR 348 merged on November 19 and replaces `RegisteredTool` dictionaries with
+opaque `Tool` objects. Each identifies one registration through a host-internal
+ID; re-registering the same name cannot retarget an old handle. Discovery
+creates new objects, so JavaScript `===` across calls is not registration
+identity. `source` replaces `window`; schema and annotation fields may be null.
+JSON serialization/spreading do not copy the attributes, and structured cloning
+throws. A consumer must retain the actual host-issued handle rather than
+reconstruct it from metadata. Provider origin still binds application policy;
+the host handle is neither application authority nor approval evidence.
+
+The existing helper only registers callbacks, so it needs no consumer-side
+migration. Review stale-handle refusal after same-name re-registration,
+nullable metadata, cross-document `source`, and cloning/serialization on a
+recorded native browser plus WPT revision (`e572c0e06ac3` follows the rename).
+These remain unexecuted compatibility candidates, not new mock coverage.
 
 [Merged PR 381](https://github.com/webmachinelearning/webmcp/pull/381) updates
 the separate continuation explainer to describe Blink, not the specification
@@ -440,8 +450,8 @@ A WebMCP adapter should test at least:
 - provider origin never substitutes for application authorization;
 - `executeTool()` receives a serializable JavaScript object rather than a
   pre-stringified JSON argument;
-- a discovered `RegisteredTool.inputSchema` remains a parsed JavaScript object
-  rather than a pre-stringified schema;
+- a discovered `Tool.inputSchema` is a parsed JavaScript object or null,
+  never a pre-stringified schema;
 - a non-object or unserializable input fails before tool dispatch;
 - omitted or `undefined` input becomes an empty object but still fails when the
   action contract requires fields;
@@ -518,7 +528,7 @@ A WebMCP adapter should test at least:
 - [Pull request 337: concurrency and detached-document algorithm corrections](https://github.com/webmachinelearning/webmcp/pull/337)
 - [Pull request 345: inactive-document unregistration and registration checks](https://github.com/webmachinelearning/webmcp/pull/345)
 - [Pull request 347: duplicate-name recheck after schema serialization](https://github.com/webmachinelearning/webmcp/pull/347)
-- [Pull request 348: proposed UUID-backed Tool interface](https://github.com/webmachinelearning/webmcp/pull/348)
+- [Pull request 348: adopted Tool interface](https://github.com/webmachinelearning/webmcp/pull/348)
 - [Issue 312: proposed page-context synchronization](https://github.com/webmachinelearning/webmcp/issues/312)
 - [Pull request 296: headless browsing scenarios explicitly in scope](https://github.com/webmachinelearning/webmcp/pull/296)
 - [Pull request 217: `consequentialHint`](https://github.com/webmachinelearning/webmcp/pull/217)
